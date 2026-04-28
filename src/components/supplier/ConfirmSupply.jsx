@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/Textarea"
+import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import axios from "@/lib/axios";
