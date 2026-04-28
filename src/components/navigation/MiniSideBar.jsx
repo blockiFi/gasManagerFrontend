@@ -1,25 +1,18 @@
-import React from 'react'
+import React from "react"
 import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-  } from "@/components/ui/sheet"
-  import SideBar from "./SideBar"
-   
-const MiniSideBar = ({open , onClose}) => {
-    return (
-        <Sheet open={open} onOpenChange={onClose} >
-          <SheetContent side="left" className="w-[230px] sm:w-[270px] bg-slate-900 text-white p-0 m-0 ">
-            
-          <SideBar />
-          </SheetContent>
-        </Sheet>
-      )
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet"
+import SideBar from "./SideBar"
+
+const MiniSideBar = ({ open, onOpenChange }) => {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="w-[260px] bg-white p-0">
+        <SideBar handleClose={() => onOpenChange(false)} />
+      </SheetContent>
+    </Sheet>
+  )
 }
 
 export default MiniSideBar

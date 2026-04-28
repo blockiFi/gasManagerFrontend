@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { Bell, Menu, Search, Settings, LogOut } from "lucide-react"
+import { Bell, Menu, Search, Settings, LogOut, X } from "lucide-react"
 import { useSelector } from "react-redux"
 import { useLocation, useNavigate } from "react-router-dom"
 import avater from "../../assets/avater.png"
@@ -29,7 +29,7 @@ const pathToCrumb = (pathname) => {
   return { primary: "Dashboard", secondary }
 }
 
-const NavBar = ({ showmenu, handleOpen }) => {
+const NavBar = ({ mobileMenuOpen = false, onToggleMobileMenu }) => {
   const user = useSelector((state) => state.authentication.user)
   const location = useLocation()
   const navigate = useNavigate()
@@ -59,16 +59,14 @@ const NavBar = ({ showmenu, handleOpen }) => {
   return (
     <header className="sticky top-0 z-10 flex w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        {!showmenu ? (
-          <button
-            type="button"
-            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
-            onClick={handleOpen}
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm hover:bg-slate-100 lg:hidden"
+          onClick={onToggleMobileMenu}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
         <nav className="hidden min-w-0 text-sm sm:block" aria-label="Breadcrumb">
           <ol className="flex items-center gap-2 text-slate-500">
             <li className="font-medium text-slate-900">{crumbs.primary}</li>
