@@ -1,0 +1,52 @@
+.toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('path-to-your-background-image.jpg') no-repeat center center;
+    background-size: cover;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .label {
+    font-size: 12px;
+    color: #363333;
+    margin: 0 10px;
+  }
+  
+  .toggle-switch {
+    width: 47px;
+    height: 18px;
+    background-color: #333;
+    border-radius: 15px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .toggle-switch.on {
+    background-color: #333;
+  }
+  
+  .toggle-switch.off {
+    background-color: #333;
+  }
+  
+  .toggle-button {
+    width: 14px;
+    height: 14px;
+    background-color: #2ecc71;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+  }
+  
+  .toggle-switch.on .toggle-button {
+    transform: translateX(30px);
+  }
+  
+  .toggle-switch.off .toggle-button {
+    transform: translateX(2px);
+  }
