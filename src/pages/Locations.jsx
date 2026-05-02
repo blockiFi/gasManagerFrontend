@@ -125,7 +125,7 @@ const Locations = () => {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Total sales by location</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Total sales  @ by location</h2>
               <p className="mt-1 text-sm text-slate-500">All-time sales volume per site</p>
             </div>
             <PCharts data={overviewLocations} keyValue="totalSalesData.totalSales" />

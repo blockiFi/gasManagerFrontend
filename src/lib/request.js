@@ -49,9 +49,13 @@ export const LoadPriceData = async () => {
 export const LoadSupplyData = async () => {
    await AuthenticateUser();
    const state = store.getState();
-   const supplies =  await getBusinessSupplies(state.authentication.token , state.authentication.business.id);
-   const locations =  await getBusinessLocations(state.authentication.token , state.authentication.business.id);
-   const suppliers =  await getBusinessSuppliers(state.authentication.token , state.authentication.business.id);
+   const token = state.authentication.token;
+   const businessId = state.authentication.business.id;
+   const [supplies, locations, suppliers] = await Promise.all([
+      getBusinessSupplies(token, businessId),
+      getBusinessLocations(token, businessId),
+      getBusinessSuppliers(token, businessId),
+   ]);
 
    return {supplies , locations ,suppliers };
 }
@@ -71,13 +75,17 @@ export const LoadDispensersData = async () => {
   return { dispensers, locations };
 }
 export const LoadLocationData =async () =>{
-    // {salesData , businessUsers} 
+    // {salesData , businessUsers}
     await AuthenticateUser();
     const state = store.getState();
-    const salesData = await getBusinessSalesData(state.authentication.token , state.authentication.business.id);
-    const businessUsers = await getBusinessUsers(state.authentication.token , state.authentication.business.id);
-    const locations = await getBusinessLocations(state.authentication.token , state.authentication.business.id);
-   
+    const token = state.authentication.token;
+    const businessId = state.authentication.business.id;
+    const [salesData, businessUsers, locations] = await Promise.all([
+      getBusinessSalesData(token, businessId),
+      getBusinessUsers(token, businessId),
+      getBusinessLocations(token, businessId),
+    ]);
+
     return  {salesData , businessUsers , locations};
 }
 export const LoadSalesData = async (id) => {
@@ -85,17 +93,23 @@ export const LoadSalesData = async (id) => {
     const state = store.getState();
     const token = state.authentication.token || getToken()
     const businessId = state.authentication.business.id
-    const sales = await getLocationSales(token, businessId, id)
-    const dispensers = await getLocationDispensers(token, businessId, id)
-    const salesData = await getSalesByGroup(token, businessId, id, "weekly")
     const now = new Date()
-    const monthAnalytics = await getMonthSalesData(
-      token,
-      businessId,
-      id,
-      now.getMonth() + 1,
-      now.getFullYear()
-    )
+    const [[sales, dispensers], [salesData, monthAnalytics]] = await Promise.all([
+      Promise.all([
+        getLocationSales(token, businessId, id),
+        getLocationDispensers(token, businessId, id),
+      ]),
+      Promise.all([
+        getSalesByGroup(token, businessId, id, "weekly"),
+        getMonthSalesData(
+          token,
+          businessId,
+          id,
+          now.getMonth() + 1,
+          now.getFullYear()
+        ),
+      ]),
+    ])
     return { sales, dispensers, salesData, monthAnalytics }
 }
 export const AuthenticateUser = async () => {

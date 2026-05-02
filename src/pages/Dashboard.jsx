@@ -1,5 +1,6 @@
-import React, { useState } from "react"
+import { Suspense, useState } from "react"
 import { Outlet } from "react-router-dom"
+import RouteFallback from "@/components/layout/RouteFallback"
 import SideBar from "@/components/navigation/SideBar"
 import NavBar from "@/components/navigation/NavBar"
 import MiniSideBar from "@/components/navigation/MiniSideBar"
@@ -26,7 +27,9 @@ const Dashboard = () => {
           onToggleMobileMenu={() => setMobileMenuOpen((o) => !o)}
         />
         <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
-          <Outlet />
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </div>
       </div>
     </div>
