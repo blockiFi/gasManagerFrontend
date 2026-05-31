@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { Fuel } from "lucide-react"
+import BrandLogo from "@/components/brand/BrandLogo"
 
 const navLinkClass =
   "rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
@@ -16,12 +16,9 @@ export default function LandingNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="flex items-center gap-2 font-semibold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 shadow-lg shadow-indigo-500/30">
-            <Fuel className="h-5 w-5 text-white" aria-hidden />
-          </span>
-          <span>GasManager</span>
+          <BrandLogo dark />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">

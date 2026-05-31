@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
-import { Fuel } from "lucide-react"
+import BrandLogo from "@/components/brand/BrandLogo"
+import { BRAND_NAME } from "@/lib/brand"
 
 const year = new Date().getFullYear()
 
@@ -12,12 +13,7 @@ export default function LandingFooter() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="flex items-center gap-2 text-white">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400">
-                <Fuel className="h-4 w-4" aria-hidden />
-              </span>
-              <span className="font-semibold">GasManager</span>
-            </div>
+            <BrandLogo dark />
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
               Operations and analytics for modern gas retail. Built for owners and on-site teams.
             </p>
@@ -72,7 +68,7 @@ export default function LandingFooter() {
           </div>
         </div>
         <p className="mt-12 border-t border-white/10 pt-8 text-center text-xs text-slate-600">
-          &copy; {year} GasManager. All rights reserved.
+          &copy; {year} {BRAND_NAME}. All rights reserved.
         </p>
       </div>
     </footer>

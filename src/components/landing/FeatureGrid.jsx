@@ -55,7 +55,7 @@ export default function FeatureGrid() {
             Everything you need to run the floor
           </h2>
           <p className="mt-4 text-lg text-slate-400">
-            GasManager is built for day-to-day retail gas operations, not generic inventory spreadsheets.
+            Pump Master is built for day-to-day retail gas operations, not generic inventory spreadsheets.
           </p>
         </div>
 

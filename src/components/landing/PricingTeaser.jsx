@@ -3,35 +3,35 @@ import { Check } from "lucide-react"
 
 const tiers = [
   {
-    name: "Starter",
-    blurb: "Single location, core operations.",
-    price: "Free",
-    period: "to try",
-    features: ["1 location", "Supplies & sales", "Tank levels", "Email support"],
-    cta: "Start free",
+    name: "Solo",
+    blurb: "One station, full visibility.",
+    price: "₦5,000",
+    period: "/mo",
+    features: ["1 location", "Sales, supplies & analytics", "Live tank levels", "14-day free trial"],
+    cta: "Start free trial",
     highlight: false,
   },
   {
-    name: "Pro",
-    blurb: "Growing networks that need depth.",
-    price: "Custom",
-    period: "per org / year",
+    name: "Growth",
+    blurb: "For operators running 2–4 sites.",
+    price: "₦10,000",
+    period: "/mo",
     features: [
-      "Unlimited locations",
-      "Analytics & exports",
+      "2–4 locations",
+      "Sales, supplies & analytics",
       "Transfers & batch history",
-      "Priority support",
+      "14-day free trial",
     ],
-    cta: "Talk to us",
+    cta: "Start free trial",
     highlight: true,
   },
   {
-    name: "Enterprise",
-    blurb: "Compliance, SSO, and SLAs.",
-    price: "Custom",
-    period: "contract",
-    features: ["Dedicated success", "Custom integrations", "Audit logs", "Uptime SLA"],
-    cta: "Contact sales",
+    name: "Unlimited",
+    blurb: "No cap on locations or scale.",
+    price: "₦20,000",
+    period: "/mo",
+    features: ["Unlimited locations", "Sales, supplies & analytics", "Multi-site reporting", "14-day free trial"],
+    cta: "Start free trial",
     highlight: false,
   },
 ]
@@ -51,7 +51,7 @@ export default function PricingTeaser() {
           Simple pricing that scales with you
         </h2>
         <p className="mt-4 max-w-2xl text-lg text-slate-400">
-          Teaser tiers for planning conversations. We will align to your size, locations, and support needs.
+          Pick a plan by location count. Every plan includes a 14-day free trial — billed monthly via Paystack after that.
         </p>
 
         <ul className="mt-12 grid gap-5 lg:grid-cols-3">

@@ -6,6 +6,7 @@ const initialState = {
   token : '', 
   business : {}, 
   subscription : null,
+  permissions : null,
   authenticated : false
 };
 

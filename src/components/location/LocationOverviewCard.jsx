@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/utils"
-import { useNavigate } from "react-router-dom"
+import { Lock } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
 
 const Row = ({ label, value, mono }) => (
   <div className="flex items-center justify-between gap-3 text-sm">
@@ -10,6 +11,7 @@ const Row = ({ label, value, mono }) => (
 
 const LocationOverviewCard = ({ location }) => {
   const navigate = useNavigate()
+  const locked = location.locked === true
   const dispensers = location.dispensers
   const hasActive =
     Array.isArray(dispensers) && dispensers.some((d) => d.active === 1 || d.active === true)
@@ -17,19 +19,39 @@ const LocationOverviewCard = ({ location }) => {
   const ts = location.totalSalesData || {}
   const cm = location.currentMonthSalesData || {}
 
-  const go = () => navigate(`/dashboard/location/${location.id}`)
+  const go = () => {
+    if (locked) return
+    navigate(`/dashboard/location/${location.id}`)
+  }
 
   return (
-    <article className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article
+      className={`flex flex-col rounded-2xl border bg-white shadow-sm transition ${
+        locked
+          ? "border-slate-200 opacity-90"
+          : "border-slate-200 hover:-translate-y-0.5 hover:shadow-md"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5 pb-4">
         <div className="min-w-0 flex-1">
           <button
             type="button"
             onClick={go}
-            className="text-left text-lg font-semibold tracking-tight text-slate-900 hover:text-indigo-600"
+            disabled={locked}
+            className={`text-left text-lg font-semibold tracking-tight ${
+              locked
+                ? "cursor-not-allowed text-slate-500"
+                : "text-slate-900 hover:text-indigo-600"
+            }`}
           >
             {location.name}
           </button>
+          {locked ? (
+            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+              <Lock className="h-3 w-3" aria-hidden />
+              Locked — upgrade plan
+            </span>
+          ) : null}
           {location.address ? (
             <p className="mt-1 line-clamp-2 text-sm text-slate-500">{location.address}</p>
           ) : null}
@@ -93,13 +115,22 @@ const LocationOverviewCard = ({ location }) => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={go}
-          className="mt-auto w-full rounded-lg border border-slate-200 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50"
-        >
-          Open location
-        </button>
+        {locked ? (
+          <Link
+            to="/dashboard/subscribe"
+            className="mt-auto w-full rounded-lg border border-amber-200 bg-amber-50 py-2 text-center text-sm font-medium text-amber-900 transition hover:bg-amber-100"
+          >
+            Upgrade plan to unlock
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={go}
+            className="mt-auto w-full rounded-lg border border-slate-200 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50"
+          >
+            Open location
+          </button>
+        )}
       </div>
     </article>
   )

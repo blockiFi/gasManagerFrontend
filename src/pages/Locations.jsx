@@ -38,6 +38,7 @@ const Locations = () => {
     return salesData.data.map((loc) => ({
       ...loc,
       dispensers: loc.dispensers ?? locationsById[String(loc.id)]?.dispensers,
+      locked: locationsById[String(loc.id)]?.locked ?? false,
     }))
   }, [salesData, locationsById])
 

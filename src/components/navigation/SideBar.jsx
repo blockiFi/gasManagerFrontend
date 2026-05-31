@@ -4,6 +4,7 @@ import { X, LogOut } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
 import { setActiveMenu } from "@/store/MenuSlice"
 import { getMenuIconComponent } from "@/lib/menuIcons"
+import BrandLogo from "@/components/brand/BrandLogo"
 
 const SideBar = ({ handleClose }) => {
   const dispatch = useDispatch()
@@ -28,15 +29,7 @@ const SideBar = ({ handleClose }) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-            G
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold tracking-tight text-slate-900">GasManager</h1>
-            <p className="text-[11px] text-slate-500">Operations</p>
-          </div>
-        </div>
+        <BrandLogo size="md" showTagline />
         {handleClose ? (
           <button
             type="button"

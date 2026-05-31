@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from "lucide-react"
-import { Button } from "../ui/button"
+import BrandLogo from "@/components/brand/BrandLogo"
 import { UserLogin, storeToken } from "@/lib/request"
 import { useNavigate } from "react-router-dom"
 
@@ -82,9 +82,7 @@ const Login = () => {
                 <ShieldCheck className="h-4 w-4" aria-hidden />
                 Secure access
               </div>
-              <h1 className="mt-6 text-3xl font-semibold tracking-tight">
-                GasManager
-              </h1>
+              <BrandLogo size="lg" dark className="mt-6" />
               <p className="mt-3 text-sm leading-6 text-white/70">
                 Track sales, supplies, and dispenser levels across your locations. Sign in to continue.
               </p>

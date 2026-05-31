@@ -125,7 +125,13 @@ const router = createBrowserRouter([
           ,
           {
             path: "location/:id",
-            loader: async ({params}) => {
+            loader: async ({ params }) => {
+              await AuthenticateUser()
+              const subscription = store.getState().authentication.subscription
+              const lockedIds = (subscription?.locked_location_ids ?? []).map(String)
+              if (lockedIds.includes(String(params.id))) {
+                return redirect("/dashboard/subscribe")
+              }
               const { sales, dispensers, salesData, locationOverview } = await LoadSalesData(params.id)
               return { sales, dispensers, salesData, locationOverview }
             },

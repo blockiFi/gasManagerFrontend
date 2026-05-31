@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react"
 
 const items = [
   {
-    q: "Is GasManager only for LPG?",
+    q: "Is Pump Master only for LPG?",
     a: "It is designed for retail gas and LPG operations with tank-style dispensers, supplies, and kg-based sales, but you can use it anywhere you track batches and sell by weight or volume in similar units.",
   },
   {
@@ -19,7 +19,7 @@ const items = [
   },
   {
     q: "Do I need new hardware?",
-    a: "No special hardware is required. GasManager runs in the browser. You record sales and supplies as you operate today, with richer reporting on top.",
+    a: "No special hardware is required. Pump Master runs in the browser. You record sales and supplies as you operate today, with richer reporting on top.",
   },
   {
     q: "Where is my data stored?",
@@ -34,7 +34,7 @@ export default function FAQ() {
         <h2 id="faq-heading" className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           Frequently asked questions
         </h2>
-        <p className="mt-4 text-lg text-slate-400">Straight answers for operators evaluating GasManager.</p>
+        <p className="mt-4 text-lg text-slate-400">Straight answers for operators evaluating Pump Master.</p>
 
         <div className="mt-10 space-y-3">
           {items.map((item) => (
