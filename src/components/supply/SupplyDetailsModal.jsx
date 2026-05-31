@@ -73,6 +73,7 @@ export default function SupplyDetailsModal({ open, onOpenChange, supply, busines
     const deliveredAt = safeDate(s.delivered_at)
     const supplied = s.supplied === true || s.supplied === 1
     const sold = s.sold === true || s.sold === 1 || s.sold === "1"
+    const unlimited = s.unlimited === true || s.unlimited === 1 || s.unlimited === "1"
     return {
       locationName: s.location?.name ?? "—",
       dispenserName: s.dispenser?.name ?? "—",
@@ -80,6 +81,8 @@ export default function SupplyDetailsModal({ open, onOpenChange, supply, busines
       receiverName: s.reciever?.name ?? s.reciever?.email ?? "—",
       supplied,
       sold,
+      unlimited,
+      unitCost: s.unit_cost ?? null,
       purchasedAt,
       deliveredAt,
       note: s.note ?? "",
@@ -88,6 +91,21 @@ export default function SupplyDetailsModal({ open, onOpenChange, supply, busines
 
   const totals = details?.totals
   const sales = Array.isArray(details?.sales) ? details.sales : []
+
+  const quantityDisplay = useMemo(() => {
+    if (header?.unlimited && !header?.sold) {
+      const soldKg = totals?.total_kg_sold ?? 0
+      return soldKg > 0 ? `Running (${formatCurrency(soldKg)} kg sold)` : "Running"
+    }
+    return formatCurrency(totals?.quantity ?? supply?.quantity ?? 0)
+  }, [header, totals, supply])
+
+  const quantityLeftDisplay = useMemo(() => {
+    if (header?.unlimited && !header?.sold) {
+      return "—"
+    }
+    return formatCurrency(totals?.quantity_left ?? supply?.available_quantity ?? 0)
+  }, [header, totals, supply])
 
   const toneForStatus = header?.sold ? "good" : header?.supplied ? "warn" : "bad"
   const statusLabel = header?.sold ? "Closed" : header?.supplied ? "Delivered" : "Pending"
@@ -131,6 +149,11 @@ export default function SupplyDetailsModal({ open, onOpenChange, supply, busines
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {header?.unlimited ? (
+                    <span className="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-800 ring-1 ring-inset ring-indigo-200">
+                      Unlimited
+                    </span>
+                  ) : null}
                   <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset", {
                     "bg-emerald-50 text-emerald-800 ring-emerald-200": toneForStatus === "good",
                     "bg-amber-50 text-amber-900 ring-amber-200": toneForStatus === "warn",
@@ -164,10 +187,13 @@ export default function SupplyDetailsModal({ open, onOpenChange, supply, busines
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Quantity (kg)" value={formatCurrency(totals?.quantity ?? supply?.quantity ?? 0)} />
-              <Stat label="Quantity left (kg)" value={formatCurrency(totals?.quantity_left ?? supply?.available_quantity ?? 0)} tone={totals?.quantity_left > 0 ? "warn" : "good"} />
+              <Stat label="Quantity (kg)" value={quantityDisplay} />
+              <Stat label="Quantity left (kg)" value={quantityLeftDisplay} tone={!header?.unlimited && (totals?.quantity_left ?? 0) > 0 ? "warn" : "good"} />
               <Stat label="Total kg sold" value={formatCurrency(totals?.total_kg_sold ?? 0)} />
               <Stat label="Total sales amount" value={`₦${formatCurrency(totals?.total_sales_amount ?? 0)}`} tone="good" />
+              {header?.unlimited && !header?.sold ? (
+                <Stat label="Cost per kg" value={`₦${formatCurrency(Number(header?.unitCost ?? 0))}`} />
+              ) : null}
               <Stat label="Sales profit" value={`₦${formatCurrency(totals?.sales_profit ?? 0)}`} tone={(totals?.sales_profit ?? 0) >= 0 ? "good" : "bad"} />
               <Stat label="Excess (kg)" value={formatCurrency(totals?.excess_kg ?? supply?.excess_kg ?? 0)} tone={(totals?.excess_kg ?? 0) < 0 ? "bad" : "default"} />
               <Stat label="Excess profit" value={`₦${formatCurrency(totals?.excess_profit ?? 0)}`} />

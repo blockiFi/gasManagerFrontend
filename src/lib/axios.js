@@ -25,6 +25,9 @@ axios.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("authToken");
     }
+    if (error.response?.status === 402 && !window.location.pathname.includes("/dashboard/subscribe")) {
+      window.location.href = "/dashboard/subscribe";
+    }
     return Promise.reject(error);
   }
 );

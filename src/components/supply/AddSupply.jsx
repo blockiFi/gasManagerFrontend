@@ -36,11 +36,14 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm({
     defaultValues: {
       purchased_at: todayYmd(),
+      unlimited: false,
     },
   })
+  const isUnlimited = watch("unlimited")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState()
   const [error, setError] = useState()
@@ -80,6 +83,13 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
 
   const onSubmit = async (data) => {
     data.business_id = business_id
+    data.unlimited = Boolean(data.unlimited)
+    if (data.unlimited) {
+      delete data.quantity
+      delete data.amount
+    } else {
+      delete data.unit_cost
+    }
     setLoading(true)
     setError(undefined)
     try {
@@ -185,36 +195,71 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="supply-qty">Quantity (kg)</Label>
-                <Input
-                  id="supply-qty"
-                  type="number"
-                  inputMode="decimal"
-                  {...register("quantity", { required: true })}
-                  aria-invalid={errors.quantity ? "true" : "false"}
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <input
+                  id="supply-unlimited"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  {...register("unlimited")}
                 />
-                {errors.quantity?.type === "required" && (
-                  <p className="text-xs text-red-600" role="alert">
-                    Quantity is required
-                  </p>
-                )}
+                <Label htmlFor="supply-unlimited" className="cursor-pointer text-sm font-normal text-slate-700">
+                  Unlimited supply (quantity unknown)
+                </Label>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="supply-amount">Amount paid (₦)</Label>
-                <Input
-                  id="supply-amount"
-                  type="number"
-                  inputMode="decimal"
-                  {...register("amount", { required: true })}
-                  aria-invalid={errors.amount ? "true" : "false"}
-                />
-                {errors.amount?.type === "required" && (
-                  <p className="text-xs text-red-600" role="alert">
-                    Amount is required
+              {!isUnlimited ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="supply-qty">Quantity (kg)</Label>
+                    <Input
+                      id="supply-qty"
+                      type="number"
+                      inputMode="decimal"
+                      {...register("quantity", { required: !isUnlimited })}
+                      aria-invalid={errors.quantity ? "true" : "false"}
+                    />
+                    {errors.quantity?.type === "required" && (
+                      <p className="text-xs text-red-600" role="alert">
+                        Quantity is required
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="supply-amount">Amount paid (₦)</Label>
+                    <Input
+                      id="supply-amount"
+                      type="number"
+                      inputMode="decimal"
+                      {...register("amount", { required: !isUnlimited })}
+                      aria-invalid={errors.amount ? "true" : "false"}
+                    />
+                    {errors.amount?.type === "required" && (
+                      <p className="text-xs text-red-600" role="alert">
+                        Amount is required
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="supply-unit-cost">Cost price per kg (₦)</Label>
+                  <Input
+                    id="supply-unit-cost"
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    {...register("unit_cost", { required: isUnlimited })}
+                    aria-invalid={errors.unit_cost ? "true" : "false"}
+                  />
+                  {errors.unit_cost?.type === "required" && (
+                    <p className="text-xs text-red-600" role="alert">
+                      Cost price per kg is required
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500">
+                    Total quantity and amount will be calculated from sales when this supply is closed.
                   </p>
-                )}
-              </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="supply-purchased">Purchase date</Label>
                 <Input id="supply-purchased" type="date" {...register("purchased_at", { required: true })} />

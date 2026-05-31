@@ -1,6 +1,7 @@
 import {
   Banknote,
   BarChart3,
+  CreditCard,
   DollarSign,
   Fuel,
   Home,
@@ -21,6 +22,7 @@ export const MENU_ICON_MAP = {
   Banknote,
   Users,
   Settings,
+  CreditCard,
 };
 
 export function getMenuIconComponent(iconKey) {

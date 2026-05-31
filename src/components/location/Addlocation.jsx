@@ -52,8 +52,9 @@ const Addlocation = ({business_id , users}) => {
                 }
             }).catch((error)=>{
                 console.log(error)
-                setError("Error Occured While Adding Location  !!!");
-
+                setLoading(false)
+                const apiError = error.response?.data?.errors?.[0]
+                setError(apiError ?? "Error Occured While Adding Location  !!!");
             })
        
 
@@ -72,9 +73,11 @@ const Addlocation = ({business_id , users}) => {
             <DialogHeader>
               <DialogTitle>Add Location</DialogTitle>
               <DialogDescription>
-                
-                {error && {error}}
-                
+                {error ? (
+                  <span className="text-sm text-rose-600" role="alert">{error}</span>
+                ) : (
+                  "Add a new location and assign a manager."
+                )}
               </DialogDescription>
             </DialogHeader>
             {success ? 

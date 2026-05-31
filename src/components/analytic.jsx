@@ -2,7 +2,7 @@ import DoubleLineChart from "@/components/charts/DoubleLineChart"
 import ObtionSelector from "@/components/ObtionSelector"
 import AnalyticsKpiStrip from "@/components/analytic/AnalyticsKpiStrip"
 import { getSalesByGroup } from "@/lib/request"
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSelector } from "react-redux"
 import { Flame, TrendingUp, Scale } from "lucide-react"
 import { toast } from "react-toastify"
@@ -63,59 +63,62 @@ const Analytic = ({ locations }) => {
     locations.data.length > 0 ? locations.data[0] : null
   )
 
-  const processRecord = useCallback(async (data) => {
-    if (!data || data.length === 0) return []
-    if (data.length === 1) {
-      return [
-        {
-          ...data[0],
-          connection: null,
-          projected_ExcessKgProfit: null,
-          projected_profit: null,
-          projected_totalExcessKg: null,
-          projected_totalProfit: null,
-          projected_totalSalesAmount: null,
-          projected_totalSalesKg: null,
-        },
-      ]
-    }
-    const TempData = [...data]
-    const lastItem = TempData.pop()
-    const projectedSales = await projectedValues(TempData)
+  const processRecord = useCallback(
+    (data) => {
+      if (!data || data.length === 0) return []
+      if (data.length === 1) {
+        return [
+          {
+            ...data[0],
+            connection: null,
+            projected_ExcessKgProfit: null,
+            projected_profit: null,
+            projected_totalExcessKg: null,
+            projected_totalProfit: null,
+            projected_totalSalesAmount: null,
+            projected_totalSalesKg: null,
+          },
+        ]
+      }
+      const TempData = [...data]
+      const lastItem = TempData.pop()
+      const projectedSales = projectedValues(TempData, {
+        timeframe,
+        periodsToUse: 12,
+      })
 
-    const newData = TempData.map((row) => ({
-      ...row,
-      connection: null,
-      projected_ExcessKgProfit: null,
-      projected_profit: null,
-      projected_totalExcessKg: null,
-      projected_totalProfit: null,
-      projected_totalSalesAmount: null,
-      projected_totalSalesKg: null,
-    }))
+      const newData = TempData.map((row) => ({
+        ...row,
+        connection: null,
+        projected_ExcessKgProfit: null,
+        projected_profit: null,
+        projected_totalExcessKg: null,
+        projected_totalProfit: null,
+        projected_totalSalesAmount: null,
+        projected_totalSalesKg: null,
+      }))
 
-    const proj = projectedSales?.projections
-    const newLast = {
-      ...lastItem,
-      connection: null,
-      projected_ExcessKgProfit: proj ? proj.ExcessKgProfit : null,
-      projected_profit: proj ? proj.profit : null,
-      projected_totalExcessKg: proj ? proj.totalExcessKg : null,
-      projected_totalProfit: proj ? proj.totalProfit : null,
-      projected_totalSalesAmount: proj ? proj.totalSalesAmount : null,
-      projected_totalSalesKg: proj ? proj.totalSalesKg : null,
-    }
-    newData.push(newLast)
-    return newData
-  }, [])
+      const proj = projectedSales?.projections
+      const newLast = {
+        ...lastItem,
+        connection: null,
+        projected_ExcessKgProfit: proj?.ExcessKgProfit ?? null,
+        projected_profit: proj?.profit ?? null,
+        projected_totalExcessKg: proj?.totalExcessKg ?? null,
+        projected_totalProfit: proj?.totalProfit ?? null,
+        projected_totalSalesAmount: proj?.totalSalesAmount ?? null,
+        projected_totalSalesKg: proj?.totalSalesKg ?? null,
+      }
+      newData.push(newLast)
+      return newData
+    },
+    [timeframe],
+  )
 
   useEffect(() => {
     const first = locations?.data?.[0]?.salesData
     if (!first?.length) return
-    ;(async () => {
-      const data = await processRecord(first)
-      setSalesDataState(data)
-    })()
+    setSalesDataState(processRecord(first))
   }, [locations, processRecord])
 
   const handleChange = async (parameter) => {
@@ -134,8 +137,7 @@ const Analytic = ({ locations }) => {
 
     const response = await getSalesByGroup(token, business.id, id, tf, all)
     if (response.success) {
-      const data = await processRecord(response.data)
-      setSalesDataState(data)
+      setSalesDataState(processRecord(response.data))
     } else {
       toast.error(`Could not load ${capitalizeTf(tf)} data`)
     }
@@ -154,8 +156,7 @@ const Analytic = ({ locations }) => {
       const firstId = locations.data[0].id
       const response = await getSalesByGroup(token, business.id, firstId, tf, true)
       if (response.success) {
-        const data = await processRecord(response.data)
-        setSalesDataState(data)
+        setSalesDataState(processRecord(response.data))
       } else {
         toast.error("Could not load business-wide data")
       }
@@ -168,8 +169,7 @@ const Analytic = ({ locations }) => {
     setActiveLocation(selectedLocation)
     const response = await getSalesByGroup(token, business.id, selectedLocation.id, tf, false)
     if (response.success) {
-      const data = await processRecord(response.data)
-      setSalesDataState(data)
+      setSalesDataState(processRecord(response.data))
     } else {
       toast.error("Could not load location data")
     }
@@ -186,7 +186,7 @@ const Analytic = ({ locations }) => {
           itemDate.getFullYear() !== now.getFullYear() || itemDate.getMonth() !== now.getMonth()
         )
       })
-      await projectedValues(filteredData)
+      projectedValues(filteredData, { timeframe, periodsToUse: 12 })
     }
   }
 

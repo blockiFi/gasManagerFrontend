@@ -17,7 +17,7 @@ const Location = () => {
   const { id } = useParams()
   const business = useSelector((state) => state.authentication.business)
   const token = useSelector((state) => state.authentication.token)
-  const { sales, dispensers, salesData, monthAnalytics } = useLoaderData()
+  const { sales, dispensers, salesData, locationOverview } = useLoaderData()
   const [salesDataState, setSalesDataState] = useState(salesData.data)
   const [showAmount, setShowAmount] = useState(true)
   const [isKg, setIsKg] = useState(false)
@@ -74,7 +74,7 @@ const Location = () => {
         <AddDispenser business_id={business.id} location_id={sales.location.id} />
       </HeaderCard>
 
-      <LocationKPIs salesRows={sales.data} dispensers={dispensers} monthAnalytics={monthAnalytics} />
+      <LocationKPIs salesRows={sales.data} dispensers={dispensers} locationOverview={locationOverview} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">

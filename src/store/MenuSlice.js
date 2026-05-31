@@ -47,6 +47,11 @@ const initialState = {
       route: "/dashboard/settings",
       icon: "Settings",
     },
+    {
+      name: "Billing",
+      route: "/dashboard/subscribe",
+      icon: "CreditCard",
+    },
   ],
   activeMenu: "Home",
 };

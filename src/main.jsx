@@ -7,7 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom"
 import { Provider } from 'react-redux';
 import store from './store/index.js';
-import { AuthenticateUser, LoadAnalyticsData, LoadCostData, LoadDispensersData, LoadLocationData, LoadPriceData, LoadSalesData, LoadSettingsData, LoadSupplierData, LoadSupplyData, LoadUsersData } from './lib/request.js';
+import { AuthenticateUser, LoadAnalyticsData, LoadCostData, LoadDispensersData, LoadLocationData, LoadPriceData, LoadSalesData, LoadSettingsData, LoadSupplierData, LoadSupplyData, LoadUsersData, subscriptionHasAccess } from './lib/request.js';
 import AppShell from '@/components/layout/AppShell.jsx'
 
 const LandingPage = lazy(() => import('./pages/Landing.jsx'))
@@ -23,6 +23,7 @@ const SettingsPage = lazy(() => import('./pages/Settings.jsx'))
 const LocationPage = lazy(() => import('./pages/Location.jsx'))
 const AnalyticsPage = lazy(() => import('./pages/Analytics.jsx'))
 const DispensersPage = lazy(() => import('./pages/Dispensers.jsx'))
+const SubscribePage = lazy(() => import('./pages/Subscribe.jsx'))
 
 const router = createBrowserRouter([
   {
@@ -40,12 +41,20 @@ const router = createBrowserRouter([
       {
         path: "dashboard",
         element : <DashboardPage />,
-        loader: async () => {
+        loader: async ({ request }) => {
          const authenticated = await AuthenticateUser();
 
           if(!authenticated){
             return redirect('/login')
           }
+
+          const url = new URL(request.url);
+          const isSubscribeRoute = url.pathname.endsWith('/subscribe');
+          const subscription = store.getState().authentication.subscription;
+          if (!isSubscribeRoute && !subscriptionHasAccess(subscription)) {
+            return redirect('/dashboard/subscribe');
+          }
+
           return authenticated;
         },
         children : [
@@ -117,10 +126,14 @@ const router = createBrowserRouter([
           {
             path: "location/:id",
             loader: async ({params}) => {
-              const {sales ,dispensers ,salesData} = await LoadSalesData(params.id);
-              return {sales ,dispensers ,salesData};
+              const { sales, dispensers, salesData, locationOverview } = await LoadSalesData(params.id)
+              return { sales, dispensers, salesData, locationOverview }
             },
            element : <LocationPage />
+          },
+          {
+            path: "subscribe",
+            element: <SubscribePage />,
           },
           {
             path: "analytics",

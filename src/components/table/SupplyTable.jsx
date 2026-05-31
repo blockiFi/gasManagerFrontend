@@ -35,6 +35,9 @@ import ConfirmSupply from "../supplier/ConfirmSupply"
 import CloseSupply from "../supplier/CloseSupply"
 import SupplyDetailsModal from "@/components/supply/SupplyDetailsModal"
 
+const isUnlimitedSupply = (row) => row.unlimited === true || row.unlimited === 1 || row.unlimited === "1"
+const isOpenSupply = (row) => !(row.sold === true || row.sold === 1 || row.sold === "1")
+
 const columns = [
   {
     id: "rowNum",
@@ -75,18 +78,30 @@ const columns = [
   {
     accessorKey: "quantity",
     header: "Qty (kg)",
-    cell: ({ row }) => (
-      <span className="tabular-nums text-sm text-slate-800">{formatCurrency(row.getValue("quantity"))}</span>
-    ),
+    cell: ({ row }) => {
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) {
+        return <span className="text-sm italic text-slate-500">Running</span>
+      }
+      return (
+        <span className="tabular-nums text-sm text-slate-800">{formatCurrency(row.getValue("quantity"))}</span>
+      )
+    },
   },
   {
     accessorKey: "amount",
     header: "Amount",
-    cell: ({ row }) => (
-      <span className="inline-block rounded-md bg-emerald-50 px-2 py-1 text-sm font-medium tabular-nums text-emerald-800">
-        ₦{formatCurrency(row.getValue("amount"))}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) {
+        return <span className="text-sm italic text-slate-500">—</span>
+      }
+      return (
+        <span className="inline-block rounded-md bg-emerald-50 px-2 py-1 text-sm font-medium tabular-nums text-emerald-800">
+          ₦{formatCurrency(row.getValue("amount"))}
+        </span>
+      )
+    },
   },
   {
     id: "supplierName",
@@ -109,24 +124,39 @@ const columns = [
     accessorKey: "supplied",
     header: "Status",
     cell: ({ row }) => {
+      const s = row.original
       const ok = row.getValue("supplied") === 1 || row.getValue("supplied") === true
+      const unlimited = isUnlimitedSupply(s)
       return (
-        <span
-          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            ok ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
-          }`}
-        >
-          {ok ? "Delivered" : "Pending"}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {unlimited ? (
+            <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+              Unlimited
+            </span>
+          ) : null}
+          <span
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              ok ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
+            }`}
+          >
+            {ok ? "Delivered" : "Pending"}
+          </span>
+        </div>
       )
     },
   },
   {
     accessorKey: "available_quantity",
     header: "Available",
-    cell: ({ row }) => (
-      <span className="tabular-nums text-sm text-slate-800">{row.getValue("available_quantity")}</span>
-    ),
+    cell: ({ row }) => {
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) {
+        return <span className="text-sm italic text-slate-500">—</span>
+      }
+      return (
+        <span className="tabular-nums text-sm text-slate-800">{row.getValue("available_quantity")}</span>
+      )
+    },
   },
   {
     accessorKey: "excess_kg",
@@ -165,6 +195,7 @@ const columns = [
       const s = row.original
       const supplied = s.supplied === true || s.supplied === 1
       const sold = s.sold === true || s.sold === 1 || s.sold === "1"
+      const unlimited = isUnlimitedSupply(s)
       if (!supplied) {
         return (
           <div onClick={(e) => e.stopPropagation()}>
@@ -175,7 +206,7 @@ const columns = [
       if (!sold) {
         return (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <TransferSupply supply={s} />
+            {!unlimited ? <TransferSupply supply={s} /> : null}
             <CloseSupply supply={s} />
           </div>
         )

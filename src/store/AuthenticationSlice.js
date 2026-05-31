@@ -5,6 +5,7 @@ const initialState = {
   user  : {},
   token : '', 
   business : {}, 
+  subscription : null,
   authenticated : false
 };
 
@@ -22,12 +23,15 @@ const AuthenicationSlice = createSlice({
     },
     setUserBusiness : (state , action) =>{
         state.business = action.payload;
+    },
+    setSubscription: (state, action) => {
+        state.subscription = action.payload;
     }
   },
 });
 
 // Export actions
-export const { setUser, setToken , setUserBusiness } = AuthenicationSlice.actions;
+export const { setUser, setToken , setUserBusiness, setSubscription } = AuthenicationSlice.actions;
 
 // Export the reducer to use in the store
 export default AuthenicationSlice.reducer;

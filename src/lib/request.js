@@ -1,6 +1,6 @@
 import store from '../store/index';
 import axios from './axios';
-import { setToken, setUser ,setUserBusiness } from '@/store/AuthenticationSlice';
+import { setToken, setUser ,setUserBusiness, setSubscription } from '@/store/AuthenticationSlice';
 
 export const LoadSettingsData = async () => {
    await AuthenticateUser();
@@ -93,43 +93,54 @@ export const LoadSalesData = async (id) => {
     const state = store.getState();
     const token = state.authentication.token || getToken()
     const businessId = state.authentication.business.id
-    const now = new Date()
-    const [[sales, dispensers], [salesData, monthAnalytics]] = await Promise.all([
+    const [[sales, dispensers], salesData, locationOverview] = await Promise.all([
       Promise.all([
         getLocationSales(token, businessId, id),
         getLocationDispensers(token, businessId, id),
       ]),
-      Promise.all([
-        getSalesByGroup(token, businessId, id, "weekly"),
-        getMonthSalesData(
-          token,
-          businessId,
-          id,
-          now.getMonth() + 1,
-          now.getFullYear()
-        ),
-      ]),
+      getSalesByGroup(token, businessId, id, "weekly"),
+      getLocationSalesBreakdown(token, businessId, id),
     ])
-    return { sales, dispensers, salesData, monthAnalytics }
+    return { sales, dispensers, salesData, locationOverview }
 }
+export const subscriptionHasAccess = (subscription) => subscription?.has_access === true
+
+export const loadSubscriptionIntoStore = async (token, businessId) => {
+  if (!businessId) return null
+  const res = await getSubscription(token, businessId)
+  if (res.success) {
+    store.dispatch(setSubscription(res.data))
+    return res.data
+  }
+  return null
+}
+
 export const AuthenticateUser = async () => {
     
     const state = store.getState();
-    if(state.authentication.authenticated){
-        return true;
-    }
     const token = getToken();
-    const user = await getUser(token);
-
-    const userBusiness =  await getUserBusiness(token);
-    if(user.success && userBusiness.success){
-        store.dispatch(setToken(token));
-        store.dispatch(setUser(user.data));
-        store.dispatch(setUserBusiness(userBusiness.data));
-        
-        return true;
+    if (!token) {
+        return false;
     }
-    return false;
+
+    if(!state.authentication.authenticated){
+        const user = await getUser(token);
+        const userBusiness =  await getUserBusiness(token);
+        if(user.success && userBusiness.success){
+            store.dispatch(setToken(token));
+            store.dispatch(setUser(user.data));
+            store.dispatch(setUserBusiness(userBusiness.data));
+            await loadSubscriptionIntoStore(token, userBusiness.data?.id);
+            return true;
+        }
+        return false;
+    }
+
+    if (state.authentication.business?.id) {
+        await loadSubscriptionIntoStore(token, state.authentication.business.id);
+    }
+
+    return true;
 }
 export   const getUser = async(token) => {
     try {
@@ -225,6 +236,28 @@ export   const UserLogin = async(email ,password ) => {
     }
  }
 
+/** Single-location slice of get_sales_data (current month + all-time totals in payload row). */
+export const getLocationSalesBreakdown = async (token, businessId, locationId) => {
+  try {
+    const response = await axios.post(
+      "api/get_business/get_sales_data",
+      { business_id: businessId, location_id: locationId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (response.status === 200) {
+      const list = Array.isArray(response.data?.data) ? response.data.data : []
+      return { success: true, data: list[0] ?? null }
+    }
+    return { success: false, error: ["Could not load location sales overview"] }
+  } catch (error) {
+    console.log(error)
+    return {
+      success: false,
+      error: error.response?.data?.errors || ["Could not load location sales overview"],
+    }
+  }
+}
+
 
 export const getUserBusiness = async(token) => {
     const response = await  axios.get("/api/get_business" ,  { headers: {"Authorization" : `Bearer ${token}`} })
@@ -237,6 +270,62 @@ export const getUserBusiness = async(token) => {
        return { success : false,
         error: "User Have no Busines"}
     }
+}
+
+export const getSubscription = async (token, businessId) => {
+  try {
+    const response = await axios.get("/api/subscription", {
+      params: { business_id: businessId },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data }
+    }
+    return { success: false, error: "Could not load subscription." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not load subscription.",
+    }
+  }
+}
+
+export const initializeSubscriptionPayment = async (token, businessId, planKey) => {
+  try {
+    const response = await axios.post(
+      "/api/subscription/initialize",
+      { business_id: businessId, plan_key: planKey },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (response.status === 200) {
+      return { success: true, data: response.data.data }
+    }
+    return { success: false, error: "Could not start payment." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not start payment.",
+    }
+  }
+}
+
+export const verifySubscriptionPayment = async (token, businessId, reference) => {
+  try {
+    const response = await axios.post(
+      "/api/subscription/verify",
+      { business_id: businessId, reference },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (response.status === 200) {
+      return { success: true, data: response.data.data, message: response.data.message }
+    }
+    return { success: false, error: "Payment verification failed." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Payment verification failed.",
+    }
+  }
 }
 export   const getAllLocationOperationalCostSummery = async(token ,businessId ) => {
    try {
