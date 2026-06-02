@@ -1,11 +1,14 @@
 import AddEmployee from "@/components/employee/AddEmployee"
+import Can from "@/components/Auth/Can"
 import EmployeeTable from "@/components/table/EmployeeTable"
 import HeaderCard from "@/components/HeaderCard"
+import { CAPABILITIES } from "@/lib/permissions"
 import { setActiveMenu } from "@/store/MenuSlice"
 import { Users } from "lucide-react"
 import { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useLoaderData, useLocation } from "react-router-dom"
+import usePermissions from "@/hooks/usePermissions"
 
 const Employees = () => {
   const business = useSelector((state) => state.authentication.business)
@@ -13,6 +16,7 @@ const Employees = () => {
   const location = useLocation()
   const dispatch = useDispatch()
   const menu = useSelector((state) => state.menu.menu)
+  const { isOwner } = usePermissions()
 
   useEffect(() => {
     const hit = menu.find((item) => item.route === location.pathname)
@@ -29,7 +33,9 @@ const Employees = () => {
             <Users className="mt-0.5 hidden h-4 w-4 shrink-0 text-slate-400 sm:block" aria-hidden />
             <span>Invite staff and manage who can access this business.</span>
           </div>
-          <AddEmployee business_id={business.id} />
+          <Can capability={CAPABILITIES.EMPLOYEE_MANAGE}>
+            <AddEmployee business_id={business.id} />
+          </Can>
         </div>
       </HeaderCard>
 
@@ -43,11 +49,11 @@ const Employees = () => {
         <div className="border-b border-slate-100 px-6 py-5">
           <h2 className="text-lg font-semibold tracking-tight text-slate-900">Users</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {list.length} team member{list.length === 1 ? "" : "s"} · reset passwords from the actions column
+            {list.length} team member{list.length === 1 ? "" : "s"} · assign roles and reset passwords from the actions column
           </p>
         </div>
         <div className="p-4 sm:p-6">
-          <EmployeeTable data={list} />
+          <EmployeeTable data={list} businessId={business.id} isOwner={isOwner} />
         </div>
       </section>
     </div>

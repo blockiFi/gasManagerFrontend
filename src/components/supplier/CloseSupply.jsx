@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react"
 import axios from "@/lib/axios"
 import { useSelector } from "react-redux"
 
-const CloseSupply = ({ supply }) => {
+const CloseSupply = ({ supply, onSuccess }) => {
   const token = useSelector((state) => state.authentication.token)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -37,10 +37,11 @@ const CloseSupply = ({ supply }) => {
       setLoading(false)
       if (res.status === 200 && res.data?.code === 200) {
         setSuccess(res.data?.message ?? "Supply closed.")
+        onSuccess?.()
         setTimeout(() => {
           setOpen(false)
           setSuccess(undefined)
-          window.location.reload()
+          if (!onSuccess) window.location.reload()
         }, 1200)
       } else {
         setError("Could not close supply.")

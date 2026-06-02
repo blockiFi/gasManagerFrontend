@@ -17,7 +17,7 @@ import { useSelector } from "react-redux"
 import { getLocationDispensers, transferSupply } from "@/lib/request"
 
 /* eslint-disable react/prop-types */
-const TransferSupply = ({ supply }) => {
+const TransferSupply = ({ supply, onSuccess }) => {
   const token = useSelector((state) => state.authentication.token)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -95,10 +95,11 @@ const TransferSupply = ({ supply }) => {
     setSubmitting(false)
     if (res.success) {
       setSuccess(res.message ?? "Transfer complete.")
+      onSuccess?.()
       setTimeout(() => {
         setOpen(false)
         setSuccess(undefined)
-        window.location.reload()
+        if (!onSuccess) window.location.reload()
       }, 1200)
     } else {
       setError(res.error ?? "Transfer failed.")

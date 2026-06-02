@@ -1,8 +1,11 @@
 import PCharts from "@/components/charts/PCharts"
 import Addlocation from "@/components/location/Addlocation"
+import Can from "@/components/Auth/Can"
 import LocationOverviewCard from "@/components/location/LocationOverviewCard"
 import HeaderCard from "@/components/HeaderCard"
 import OverviewStats from "@/components/overview/OverviewStats"
+import { CAPABILITIES } from "@/lib/permissions"
+import usePermissions from "@/hooks/usePermissions"
 import React, { useEffect, useMemo } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useLoaderData, useLocation } from "react-router-dom"
@@ -15,6 +18,8 @@ const Locations = () => {
   const location = useLocation()
   const dispatch = useDispatch()
   const menu = useSelector((state) => state.menu.menu)
+  const { can } = usePermissions()
+  const showDashboardMetrics = can(CAPABILITIES.VIEW_ANALYTICS)
 
   useEffect(() => {
     const hit = menu.find((item) => item.route === location.pathname)
@@ -104,17 +109,21 @@ const Locations = () => {
     <div className="flex flex-col gap-8">
       <HeaderCard name={business.name} address={business.address}>
         {businessUsers.success ? (
-          <Addlocation business_id={business.id} users={businessUsers.data} />
+          <Can capability={CAPABILITIES.LOCATION_CREATE}>
+            <Addlocation business_id={business.id} users={businessUsers.data} />
+          </Can>
         ) : null}
       </HeaderCard>
 
-      <OverviewStats
-        activeDispensersCount={activeDispensersCount}
-        totalSales={totalSales}
-        totalCapacity={totalCapacity}
-        percentageAvailable={percentageAvailable}
-        available={available}
-      />
+      {showDashboardMetrics ? (
+        <OverviewStats
+          activeDispensersCount={activeDispensersCount}
+          totalSales={totalSales}
+          totalCapacity={totalCapacity}
+          percentageAvailable={percentageAvailable}
+          available={available}
+        />
+      ) : null}
 
       {!salesData?.success ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -122,7 +131,7 @@ const Locations = () => {
         </div>
       ) : null}
 
-      {hasChartData ? (
+      {showDashboardMetrics && hasChartData ? (
         <div className="grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4">
@@ -152,7 +161,9 @@ const Locations = () => {
           </p>
           {businessUsers.success ? (
             <div className="mt-6">
-              <Addlocation business_id={business.id} users={businessUsers.data} />
+              <Can capability={CAPABILITIES.LOCATION_CREATE}>
+                <Addlocation business_id={business.id} users={businessUsers.data} />
+              </Can>
             </div>
           ) : null}
         </div>
@@ -164,7 +175,8 @@ const Locations = () => {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Locations</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {loactionCount} site{loactionCount === 1 ? "" : "s"} · Totals and current month at a glance
+                {loactionCount} site{loactionCount === 1 ? "" : "s"}
+                {showDashboardMetrics ? " · Totals and current month at a glance" : ""}
               </p>
             </div>
           </div>

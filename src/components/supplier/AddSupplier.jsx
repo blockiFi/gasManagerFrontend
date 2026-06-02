@@ -17,11 +17,8 @@ import { Loader2, Plus, RefreshCcw } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useSelector } from "react-redux"
-import { useLocation, useNavigate } from "react-router-dom"
 
-const AddSupplier = ({ business_id }) => {
-  const navigate = useNavigate()
-  const location = useLocation()
+const AddSupplier = ({ business_id, onSuccess, triggerClassName }) => {
   const token = useSelector((state) => state.authentication.token)
   const {
     register,
@@ -48,7 +45,7 @@ const AddSupplier = ({ business_id }) => {
       setLoading(false)
       if (response.status === 200 || response.status === 201) {
         setSuccess("Supplier added successfully.")
-        navigate(location.pathname, { replace: true })
+        onSuccess?.()
       } else {
         setError("Could not add supplier. Check your data and try again.")
       }
@@ -61,7 +58,7 @@ const AddSupplier = ({ business_id }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-indigo-600 text-white shadow-sm hover:bg-indigo-700">
+        <Button className={`gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 ${triggerClassName ?? ""}`}>
           <Plus className="mr-2 h-4 w-4" />
           Add supplier
         </Button>

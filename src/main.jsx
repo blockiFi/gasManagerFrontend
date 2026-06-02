@@ -7,7 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom"
 import { Provider } from 'react-redux';
 import store from './store/index.js';
-import { AuthenticateUser, LoadAnalyticsData, LoadCostData, LoadDispensersData, LoadLocationData, LoadPriceData, LoadSalesData, LoadSettingsData, LoadSupplierData, LoadSupplyData, LoadUsersData, subscriptionHasAccess } from './lib/request.js';
+import { AuthenticateUser, LoadAnalyticsData, LoadCostData, LoadDispensersData, LoadLocationData, LoadPriceData, LoadRolesData, LoadSalesData, LoadSettingsData, LoadSupplierData, LoadSupplyData, LoadUsersData, subscriptionHasAccess } from './lib/request.js';
+import { CAPABILITIES } from './lib/permissions.js';
+import { requireRouteCapability, requireLocationDetailCapability } from './lib/routeGuards.js';
 import AppShell from '@/components/layout/AppShell.jsx'
 
 const LandingPage = lazy(() => import('./pages/Landing.jsx'))
@@ -24,6 +26,7 @@ const LocationPage = lazy(() => import('./pages/Location.jsx'))
 const AnalyticsPage = lazy(() => import('./pages/Analytics.jsx'))
 const DispensersPage = lazy(() => import('./pages/Dispensers.jsx'))
 const SubscribePage = lazy(() => import('./pages/Subscribe.jsx'))
+const RolesPage = lazy(() => import('./pages/Roles.jsx'))
 
 const router = createBrowserRouter([
   {
@@ -61,6 +64,8 @@ const router = createBrowserRouter([
           {
             path: "",
             loader : async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_DASHBOARD);
+              if (denied) return denied;
               const {salesData , businessUsers , locations  } = await LoadLocationData();
               return {salesData , businessUsers , locations};
             },
@@ -68,25 +73,41 @@ const router = createBrowserRouter([
           },
           {
             path: "employees",
-            loader: async ()=>{
-              const {users} = await LoadUsersData();
-              return {users};
+            loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_EMPLOYEES);
+              if (denied) return denied;
+              const { users } = await LoadUsersData();
+              return { users };
             },
            element : <EmployeesPage />
           },
           {
+            path: "roles",
+            loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.EMPLOYEE_MANAGE);
+              if (denied) return denied;
+              const { roles } = await LoadRolesData();
+              return { roles };
+            },
+            element: <RolesPage />,
+          },
+          {
             path: "cost",
             loader: async () => {
-            const {locationsOperationalCost} = await LoadCostData();
-            return {locationsOperationalCost};
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_OPERATIONAL_COST);
+              if (denied) return denied;
+              const { locationsOperationalCost } = await LoadCostData();
+              return { locationsOperationalCost };
             },
            element : <OperationalCostPage />
           },
           {
             path: "prices",
             loader: async () => {
-              const {locationData} = await LoadPriceData();
-              return {locationData};
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_PRICES);
+              if (denied) return denied;
+              const { locationData } = await LoadPriceData();
+              return { locationData };
             },
            element : <PricesPage />
           }
@@ -94,31 +115,39 @@ const router = createBrowserRouter([
           {
             path: "supplies",
             loader: async () => {
-              const {supplies , locations ,suppliers } = await  LoadSupplyData();
-              return {supplies , locations ,suppliers };
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_SUPPLIES);
+              if (denied) return denied;
+              const { supplies, locations, suppliers } = await LoadSupplyData();
+              return { supplies, locations, suppliers };
             },
            element : <SupplyPage />
           },
           {
             path: "dispensers",
             loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_DISPENSERS);
+              if (denied) return denied;
               return LoadDispensersData();
             },
             element: <DispensersPage />,
           },
           {
             path: "suppliers",
-            loader : async () => {
-              const {suppliers} = await LoadSupplierData();
-              return {suppliers};
+            loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_SUPPLIERS);
+              if (denied) return denied;
+              const { suppliers, supplies } = await LoadSupplierData();
+              return { suppliers, supplies };
             },
            element : <SuppliersPage />
           },
           {
             path: "settings",
             loader: async () => {
-             const {settings} = await LoadSettingsData();
-              return {settings};
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_SETTINGS);
+              if (denied) return denied;
+              const { settings } = await LoadSettingsData();
+              return { settings };
             },
            element : <SettingsPage />
           }
@@ -132,6 +161,8 @@ const router = createBrowserRouter([
               if (lockedIds.includes(String(params.id))) {
                 return redirect("/dashboard/subscribe")
               }
+              const denied = await requireLocationDetailCapability(params.id)
+              if (denied) return denied
               const { sales, dispensers, salesData, locationOverview } = await LoadSalesData(params.id)
               return { sales, dispensers, salesData, locationOverview }
             },
@@ -139,13 +170,20 @@ const router = createBrowserRouter([
           },
           {
             path: "subscribe",
+            loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_BILLING);
+              if (denied) return denied;
+              return null;
+            },
             element: <SubscribePage />,
           },
           {
             path: "analytics",
-            loader : async () => {
-              const {locations  } = await LoadAnalyticsData();
-              return {locations};
+            loader: async () => {
+              const denied = await requireRouteCapability(CAPABILITIES.VIEW_ANALYTICS);
+              if (denied) return denied;
+              const { locations } = await LoadAnalyticsData();
+              return { locations };
             },
             element : <AnalyticsPage />
           }

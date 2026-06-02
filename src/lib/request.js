@@ -1,6 +1,6 @@
 import store from '../store/index';
 import axios from './axios';
-import { setToken, setUser ,setUserBusiness, setSubscription } from '@/store/AuthenticationSlice';
+import { setToken, setUser ,setUserBusiness, setSubscription, setPermissions } from '@/store/AuthenticationSlice';
 
 export const LoadSettingsData = async () => {
    await AuthenticateUser();
@@ -62,8 +62,13 @@ export const LoadSupplyData = async () => {
 export const LoadSupplierData = async () => {
    await AuthenticateUser();
     const state = store.getState();
-    const suppliers = await getBusinessSuppliers(state.authentication.token , state.authentication.business.id); 
-    return {suppliers};
+    const token = state.authentication.token;
+    const businessId = state.authentication.business.id;
+    const [suppliers, supplies] = await Promise.all([
+      getBusinessSuppliers(token, businessId),
+      getBusinessSupplies(token, businessId),
+    ]);
+    return { suppliers, supplies };
 }
 export const LoadDispensersData = async () => {
   await AuthenticateUser();
@@ -115,6 +120,16 @@ export const loadSubscriptionIntoStore = async (token, businessId) => {
   return null
 }
 
+export const loadPermissionsIntoStore = async (token, businessId) => {
+  if (!businessId) return null
+  const res = await getMyPermissions(token, businessId)
+  if (res.success) {
+    store.dispatch(setPermissions(res.data))
+    return res.data
+  }
+  return null
+}
+
 export const AuthenticateUser = async () => {
     
     const state = store.getState();
@@ -130,14 +145,20 @@ export const AuthenticateUser = async () => {
             store.dispatch(setToken(token));
             store.dispatch(setUser(user.data));
             store.dispatch(setUserBusiness(userBusiness.data));
-            await loadSubscriptionIntoStore(token, userBusiness.data?.id);
+            await Promise.all([
+              loadSubscriptionIntoStore(token, userBusiness.data?.id),
+              loadPermissionsIntoStore(token, userBusiness.data?.id),
+            ]);
             return true;
         }
         return false;
     }
 
     if (state.authentication.business?.id) {
-        await loadSubscriptionIntoStore(token, state.authentication.business.id);
+        await Promise.all([
+          loadSubscriptionIntoStore(token, state.authentication.business.id),
+          loadPermissionsIntoStore(token, state.authentication.business.id),
+        ]);
     }
 
     return true;
@@ -270,6 +291,141 @@ export const getUserBusiness = async(token) => {
        return { success : false,
         error: "User Have no Busines"}
     }
+}
+
+export const getMyPermissions = async (token, businessId) => {
+  try {
+    const response = await axios.get("/api/me/permissions", {
+      params: { business_id: businessId },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data }
+    }
+    return { success: false, error: "Could not load permissions." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not load permissions.",
+    }
+  }
+}
+
+export const getBusinessRoles = async (token, businessId) => {
+  try {
+    const response = await axios.get("/api/business/roles", {
+      params: { business_id: businessId },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data }
+    }
+    return { success: false, error: "Could not load roles." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not load roles.",
+    }
+  }
+}
+
+export const createRole = async (token, payload) => {
+  try {
+    const response = await axios.post("/api/business/roles", payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data, message: response.data.message }
+    }
+    return { success: false, error: "Could not create role." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not create role.",
+    }
+  }
+}
+
+export const updateRole = async (token, roleId, payload) => {
+  try {
+    const response = await axios.put(`/api/business/roles/${roleId}`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data, message: response.data.message }
+    }
+    return { success: false, error: "Could not update role." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not update role.",
+    }
+  }
+}
+
+export const deleteRole = async (token, businessId, roleId) => {
+  try {
+    const response = await axios.delete(`/api/business/roles/${roleId}`, {
+      params: { business_id: businessId },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, message: response.data.message }
+    }
+    return { success: false, error: "Could not delete role." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not delete role.",
+    }
+  }
+}
+
+export const assignUserRole = async (token, userId, payload) => {
+  try {
+    const response = await axios.post(`/api/business/users/${userId}/roles`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.status === 200) {
+      return { success: true, data: response.data.data, message: response.data.message }
+    }
+    return { success: false, error: "Could not assign role." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not assign role.",
+    }
+  }
+}
+
+export const revokeUserRole = async (token, userId, assignmentId, businessId) => {
+  try {
+    const response = await axios.delete(
+      `/api/business/users/${userId}/roles/${assignmentId}`,
+      {
+        params: { business_id: businessId },
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+    if (response.status === 200) {
+      return { success: true, message: response.data.message }
+    }
+    return { success: false, error: "Could not revoke role." }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.errors?.[0] ?? "Could not revoke role.",
+    }
+  }
+}
+
+export const LoadRolesData = async () => {
+  await AuthenticateUser()
+  const state = store.getState()
+  const token = state.authentication.token
+  const businessId = state.authentication.business.id
+  const roles = await getBusinessRoles(token, businessId)
+  return { roles }
 }
 
 export const getSubscription = async (token, businessId) => {

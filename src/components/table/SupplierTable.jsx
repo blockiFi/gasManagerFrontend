@@ -28,6 +28,8 @@ import {
 import { format } from "date-fns"
 import AddSupplier from "../supplier/AddSupplier"
 import UpdateSupplier from "../supplier/UpdateSupplier"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
 
 const columns = [
   {
@@ -101,7 +103,11 @@ const columns = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <UpdateSupplier supplier={row.original} />,
+    cell: ({ row }) => (
+      <Can capability={CAPABILITIES.SUPPLIER_MANAGE}>
+        <UpdateSupplier supplier={row.original} />
+      </Can>
+    ),
   },
 ]
 
@@ -167,7 +173,9 @@ const SupplierTable = ({ data = [], business_id }) => {
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <AddSupplier business_id={business_id} />
+          <Can capability={CAPABILITIES.SUPPLIER_MANAGE}>
+            <AddSupplier business_id={business_id} />
+          </Can>
         </div>
       </div>
 

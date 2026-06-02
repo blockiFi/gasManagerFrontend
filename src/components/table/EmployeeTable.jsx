@@ -1,6 +1,9 @@
 "use client"
 
 import ResetPassword from "@/components/employee/ResetPassword"
+import AssignRole from "@/components/employee/AssignRole"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -27,69 +30,142 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ListFilter, Search } from "lucide-react"
-import { useState } from "react"
+import { ListFilter, Search, X } from "lucide-react"
+import { useMemo, useState } from "react"
+import { useSelector } from "react-redux"
+import { useLocation, useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
+import { revokeUserRole } from "@/lib/request"
 
 const COLUMN_LABELS = {
   select: "#",
   Name: "Name",
   Email: "Email",
+  Roles: "Roles",
   Date: "Joined",
   Action: "Actions",
 }
 
-export const columns = [
-  {
-    id: "select",
-    header: "#",
-    cell: ({ row }) => (
-      <span className="text-xs font-medium tabular-nums text-slate-400">{row.index + 1}</span>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    header: "Name",
-    id: "Name",
-    accessorFn: (row) => row.user.name,
-    cell: ({ row }) => (
-      <span className="font-medium text-slate-900">{row.original.user.name}</span>
-    ),
-  },
-  {
-    accessorFn: (row) => row.user.email,
-    header: "Email",
-    id: "Email",
-    cell: ({ row }) => <span className="text-slate-600">{row.original.user.email}</span>,
-  },
-  {
-    accessorFn: (row) => row.user.created_at,
-    header: "Joined",
-    id: "Date",
-    cell: ({ row }) => {
-      const date = new Date(row.original.user.created_at)
-      const formattedDate = format(date, "do MMMM, yyyy")
-      return <span className="whitespace-nowrap text-slate-700">{formattedDate}</span>
-    },
-  },
-  {
-    accessorKey: "action",
-    id: "Action",
-    header: "Actions",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-2">
-        <ResetPassword user={row.original} />
-      </div>
-    ),
-  },
-]
+function RoleBadges({ assignments = [], onRevoke, revokingId }) {
+  if (!assignments.length) {
+    return <span className="text-sm text-slate-400">No roles assigned</span>
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {assignments.map((a) => (
+        <span
+          key={a.assignment_id}
+          className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+        >
+          {a.name}
+          {a.location_name ? ` · ${a.location_name}` : a.location_id ? ` · Loc #${a.location_id}` : " · All"}
+          {onRevoke ? (
+            <button
+              type="button"
+              className="rounded p-0.5 hover:bg-slate-200"
+              disabled={revokingId === a.assignment_id}
+              onClick={() => onRevoke(a)}
+              aria-label="Remove role"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          ) : null}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 // eslint-disable-next-line react/prop-types
-const EmployeeTable = ({ data = [] }) => {
+const EmployeeTable = ({ data = [], businessId, isOwner = false }) => {
+  const token = useSelector((state) => state.authentication.token)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [revokingId, setRevokingId] = useState(null)
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState({})
   const [rowSelection, setRowSelection] = useState({})
+
+  const handleRevoke = async (userId, assignment) => {
+    if (!window.confirm(`Remove "${assignment.name}" from this user?`)) return
+    setRevokingId(assignment.assignment_id)
+    const res = await revokeUserRole(token, userId, assignment.assignment_id, businessId)
+    setRevokingId(null)
+    if (res.success) {
+      toast.success(res.message ?? "Role removed.")
+      navigate(location.pathname, { replace: true })
+    } else {
+      toast.error(res.error)
+    }
+  }
+
+  const columns = useMemo(
+    () => [
+      {
+        id: "select",
+        header: "#",
+        cell: ({ row }) => (
+          <span className="text-xs font-medium tabular-nums text-slate-400">{row.index + 1}</span>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        header: "Name",
+        id: "Name",
+        accessorFn: (row) => row.user.name,
+        cell: ({ row }) => (
+          <span className="font-medium text-slate-900">{row.original.user.name}</span>
+        ),
+      },
+      {
+        accessorFn: (row) => row.user.email,
+        header: "Email",
+        id: "Email",
+        cell: ({ row }) => <span className="text-slate-600">{row.original.user.email}</span>,
+      },
+      {
+        id: "Roles",
+        header: "Roles",
+        cell: ({ row }) => (
+          <RoleBadges
+            assignments={row.original.role_assignments ?? []}
+            onRevoke={
+              isOwner
+                ? (a) => handleRevoke(row.original.user_id, a)
+                : null
+            }
+            revokingId={revokingId}
+          />
+        ),
+      },
+      {
+        accessorFn: (row) => row.user.created_at,
+        header: "Joined",
+        id: "Date",
+        cell: ({ row }) => {
+          const date = new Date(row.original.user.created_at)
+          const formattedDate = format(date, "do MMMM, yyyy")
+          return <span className="whitespace-nowrap text-slate-700">{formattedDate}</span>
+        },
+      },
+      {
+        accessorKey: "action",
+        id: "Action",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-2">
+            <Can capability={CAPABILITIES.EMPLOYEE_MANAGE}>
+              <AssignRole user={row.original} businessId={businessId} />
+              <ResetPassword user={row.original} />
+            </Can>
+          </div>
+        ),
+      },
+    ],
+    [businessId, isOwner, revokingId, token, location.pathname, navigate]
+  )
 
   const table = useReactTable({
     data,
@@ -138,7 +214,7 @@ const EmployeeTable = ({ data = [] }) => {
               <ChevronDownIcon className="ml-1.5 h-4 w-4 opacity-70" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-52">
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
@@ -156,61 +232,50 @@ const EmployeeTable = ({ data = [] }) => {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="max-h-[min(65vh,640px)] overflow-auto">
-          <Table>
-            <TableHeader className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm [&_tr]:border-slate-200">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="border-slate-200 hover:bg-transparent">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="border-slate-200 hover:bg-transparent">
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className="whitespace-nowrap bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="border-slate-100 hover:bg-slate-50/80">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="align-middle text-sm">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row, i) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className={`border-slate-100 transition-colors hover:bg-slate-50/80 ${
-                      i % 2 === 1 ? "bg-slate-50/40" : "bg-white"
-                    }`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-3 py-2.5 align-middle text-sm">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-28 text-center text-sm text-slate-500">
-                    No team members match your filter.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-28 text-center text-sm text-slate-500">
+                  No team members found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-500">
-          <span className="font-medium text-slate-700">{totalRows}</span> row{totalRows === 1 ? "" : "s"}
-          <span className="mx-2 text-slate-300">·</span>
-          Page <span className="font-medium text-slate-700">{pageIndex + 1}</span> of{" "}
-          <span className="font-medium text-slate-700">{pageCount}</span>
-        </p>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          {totalRows} member{totalRows === 1 ? "" : "s"}
+        </span>
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -220,6 +285,9 @@ const EmployeeTable = ({ data = [] }) => {
           >
             Previous
           </Button>
+          <span className="tabular-nums text-xs">
+            Page {pageIndex + 1} of {pageCount}
+          </span>
           <Button
             variant="outline"
             size="sm"

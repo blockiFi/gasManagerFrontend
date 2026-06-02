@@ -15,11 +15,8 @@ import { Loader2, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useSelector } from "react-redux"
-import { useLocation, useNavigate } from "react-router-dom"
 
-const UpdateSupplier = ({ supplier }) => {
-  const navigate = useNavigate()
-  const location = useLocation()
+const UpdateSupplier = ({ supplier, onSuccess }) => {
   const token = useSelector((state) => state.authentication.token)
   const {
     register,
@@ -42,10 +39,8 @@ const UpdateSupplier = ({ supplier }) => {
       setLoading(false)
       if (response.status === 200 || response.status === 201) {
         setSuccess("Supplier updated successfully.")
-        setTimeout(() => {
-          navigate(location.pathname, { replace: true })
-          setSuccess(null)
-        }, 400)
+        onSuccess?.()
+        setTimeout(() => setSuccess(null), 1500)
       } else {
         setError("Could not update supplier.")
       }

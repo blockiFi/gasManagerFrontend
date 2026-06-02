@@ -9,6 +9,8 @@ import {
 } from "@/lib/request"
 import { setSubscription } from "@/store/AuthenticationSlice"
 import { formatCurrency } from "@/lib/utils"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
 
 const formatPlanPrice = (amountNgn) => `₦${formatCurrency(amountNgn)}`
 
@@ -134,16 +136,18 @@ export default function Subscribe() {
                   Sales, supplies & analytics
                 </li>
               </ul>
-              <Button
-                className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700"
-                disabled={loadingPlan !== null || isCurrent}
-                onClick={() => handleSubscribe(plan.key)}
-              >
-                {loadingPlan === plan.key ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                {isCurrent ? "Current plan" : subscription?.is_active ? "Upgrade" : "Subscribe"}
-              </Button>
+              <Can capability={CAPABILITIES.BILLING_MANAGE}>
+                <Button
+                  className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700"
+                  disabled={loadingPlan !== null || isCurrent}
+                  onClick={() => handleSubscribe(plan.key)}
+                >
+                  {loadingPlan === plan.key ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  {isCurrent ? "Current plan" : subscription?.is_active ? "Upgrade" : "Subscribe"}
+                </Button>
+              </Can>
             </div>
           )
         })}

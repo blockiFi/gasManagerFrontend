@@ -13,6 +13,9 @@ import {
   import { useState } from "react"
   import { HamburgerMenuIcon } from "@radix-ui/react-icons"
 import ChangeManager from "./ChangeManager"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
+
 const LocationSettingDropdown =({users , business_id , location_id}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -27,6 +30,7 @@ const LocationSettingDropdown =({users , business_id , location_id}) => {
         setIsOpen(!isOpen); // Toggle dropdown visibility
       };
   return (
+    <Can capability={CAPABILITIES.LOCATION_CHANGE_MANAGER}>
     <>
     <div  className='text-white'>
     <DropdownMenu  >
@@ -47,6 +51,7 @@ const LocationSettingDropdown =({users , business_id , location_id}) => {
       <ChangeManager users={users} business_id={business_id} location_id={location_id} isOpen={isDialogOpen} onOpenChange={setIsDialogOpen}  />
     </div>
     </>
+    </Can>
   )
 }
 

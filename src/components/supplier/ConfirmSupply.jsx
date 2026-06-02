@@ -22,7 +22,7 @@ const todayYmd = () => {
   return `${d.getFullYear()}-${m}-${day}`;
 };
 
-const ConfirmSupply = ({supply}) => {
+const ConfirmSupply = ({ supply, onSuccess }) => {
     const token = useSelector((state) => state.authentication.token);
     const {
         register,
@@ -44,6 +44,7 @@ const ConfirmSupply = ({supply}) => {
                 setLoading(false)
                 if(responce.status){
                     setSuccess("Supply Added Successfully!!!");
+                    onSuccess?.()
                 }else{
                     setError("Error Occured While Adding Supply Check  Data!!!");
                 }

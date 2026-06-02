@@ -1,69 +1,48 @@
-import SetPrice from "@/components/price/SetPrice"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+/* eslint-disable react/prop-types */
 import { formatCurrency } from "@/lib/utils"
-import { History, Loader2, MapPin } from "lucide-react"
-import { useState } from "react"
+import { ChevronRight, MapPin } from "lucide-react"
 
-const LocationPrice = ({ location, getPrices, isSelected }) => {
-  const [loading, setLoading] = useState(false)
-
-  const handleLoadHistory = async () => {
-    setLoading(true)
-    try {
-      await getPrices(location.id)
-    } finally {
-      setLoading(false)
-    }
-  }
+const LocationPrice = ({ location, isSelected, onSelect }) => {
+  const activePrice = Number(location.active_price) || 0
 
   return (
-    <Card
-      className={`flex flex-col border transition-shadow ${
+    <button
+      type="button"
+      onClick={() => onSelect(location)}
+      className={`group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
         isSelected
-          ? "border-indigo-300 shadow-md ring-2 ring-indigo-100"
-          : "border-slate-200 shadow-sm hover:shadow-md"
+          ? "border-indigo-300 bg-indigo-50/80 shadow-sm ring-1 ring-indigo-200"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
       }`}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg font-semibold tracking-tight text-slate-900">
-            {location.name}
-          </CardTitle>
-          {isSelected ? (
-            <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
-              Selected
-            </span>
-          ) : null}
-        </div>
+      <div
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+          isSelected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+        }`}
+      >
+        <MapPin className="h-4 w-4" aria-hidden />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-slate-900">{location.name}</p>
         {location.address ? (
-          <p className="flex items-start gap-1.5 text-xs text-slate-500">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="line-clamp-2">{location.address}</span>
-          </p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{location.address}</p>
         ) : null}
-      </CardHeader>
-      <CardContent className="flex-1 pt-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Current price</p>
-        <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-slate-900">
-          ₦{formatCurrency(location.active_price)}
+        <p className="mt-2 text-xs text-slate-500">
+          Active price{" "}
+          <span className="font-semibold tabular-nums text-slate-900">
+            ₦{formatCurrency(activePrice)}
+          </span>
         </p>
-      </CardContent>
-      <CardFooter className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="border-slate-200"
-          onClick={handleLoadHistory}
-          disabled={loading}
-        >
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <History className="mr-2 h-4 w-4" />}
-          View history
-        </Button>
-        <SetPrice location={location} />
-      </CardFooter>
-    </Card>
+      </div>
+
+      <ChevronRight
+        className={`h-4 w-4 shrink-0 transition ${
+          isSelected ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
+        }`}
+        aria-hidden
+      />
+    </button>
   )
 }
 

@@ -34,6 +34,8 @@ import EditSaleDate from "../sales/EditSaleDate"
 import ReverseLatestSale from "../sales/ReverseLatestSale"
 import UploadReciept from "../sales/UploadReciept"
 import ViewReciept from "../sales/ViewReciept"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
 
 const money = (n) => `₦${formatCurrency(n)}`
 
@@ -183,16 +185,26 @@ export const columns = [
       const latestId = latestIdsByDispenser[did]
       const isLatestForDispenser = String(row.original.id) === String(latestId)
 
+      const locationId = row.original.location_id
+
       return (
         <div className="flex max-w-[220px] flex-wrap gap-1.5">
-          <EditSaleDate sale={row.original} />
-          {isLatestForDispenser && <ReverseLatestSale sale={row.original} />}
+          <Can capability={CAPABILITIES.SALES_EDIT_DATE} locationId={locationId}>
+            <EditSaleDate sale={row.original} />
+          </Can>
+          {isLatestForDispenser ? (
+            <Can capability={CAPABILITIES.SALES_REVERSE} locationId={locationId}>
+              <ReverseLatestSale sale={row.original} />
+            </Can>
+          ) : null}
           {row.getValue("status") === "pending" && (
-            <UploadReciept
-              salesID={row.original.id}
-              businessID={row.original.business_id}
-              locationID={row.original.location_id}
-            />
+            <Can capability={CAPABILITIES.SALES_UPLOAD_RECEIPT} locationId={locationId}>
+              <UploadReciept
+                salesID={row.original.id}
+                businessID={row.original.business_id}
+                locationID={row.original.location_id}
+              />
+            </Can>
           )}
           {row.getValue("status") === "confirming" && (
             <>
@@ -201,11 +213,13 @@ export const columns = [
                 businessID={row.original.business_id}
                 LocationID={row.original.location_id}
               />
-              <ConfirmPayment
-                salesID={row.original.id}
-                businessID={row.original.business_id}
-                locationID={row.original.location_id}
-              />
+              <Can capability={CAPABILITIES.SALES_CONFIRM_PAYMENT}>
+                <ConfirmPayment
+                  salesID={row.original.id}
+                  businessID={row.original.business_id}
+                  locationID={row.original.location_id}
+                />
+              </Can>
             </>
           )}
           {row.getValue("status") === "confirmed" && (
@@ -221,7 +235,7 @@ export const columns = [
   },
 ]
 
-export default function DataTable({ data = [], dispensers, business: _business }) {
+export default function DataTable({ data = [], dispensers, business: _business, locationId }) {
   const [reversedArray, setReversedArray] = useState([])
 
   useEffect(() => {
@@ -285,7 +299,9 @@ export default function DataTable({ data = [], dispensers, business: _business }
           />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <AddSalesMenu dispensers={dispensers} />
+          <Can capability={CAPABILITIES.SALES_ADD} locationId={locationId}>
+            <AddSalesMenu dispensers={dispensers} />
+          </Can>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="border-slate-200 shadow-sm">

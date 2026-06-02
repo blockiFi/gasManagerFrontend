@@ -1,7 +1,9 @@
 /* eslint-disable react/prop-types -- dispenser is API model shape */
 import DispenserData from "./DispenserData"
 import ViewDispenser from "./ViewDispenser"
+import Can from "@/components/Auth/Can"
 import Tank from "./TankPage"
+import { CAPABILITIES } from "@/lib/permissions"
 import {
   getDispenserFillPercent,
   getDispenserFillRatioClamped,
@@ -72,7 +74,9 @@ const Dispenser = ({ dispenser }) => {
           ) : null}
 
           <div className="mt-auto pt-1">
-            <ViewDispenser dispenser={dispenser} triggerVariant="ghost" />
+            <Can capability={CAPABILITIES.DISPENSER_MANAGE}>
+              <ViewDispenser dispenser={dispenser} triggerVariant="ghost" />
+            </Can>
           </div>
         </div>
       </div>

@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from "react-redux"
 import { setActiveMenu } from "@/store/MenuSlice"
 import { getMenuIconComponent } from "@/lib/menuIcons"
 import BrandLogo from "@/components/brand/BrandLogo"
+import usePermissions from "@/hooks/usePermissions"
+import { roleLabel } from "@/lib/permissions"
 
 const SideBar = ({ handleClose }) => {
   const dispatch = useDispatch()
@@ -12,6 +14,9 @@ const SideBar = ({ handleClose }) => {
   const menu = useSelector((state) => state.menu.menu)
   const activeMenu = useSelector((state) => state.menu.activeMenu)
   const user = useSelector((state) => state.authentication.user)
+  const { can, role } = usePermissions()
+
+  const visibleMenu = menu.filter((item) => !item.capability || can(item.capability))
 
   const routeTo = (route) => {
     dispatch(setActiveMenu(route.name))
@@ -24,7 +29,7 @@ const SideBar = ({ handleClose }) => {
   }
 
   const displayName = user?.name || "Account"
-  const displayRole = user?.email ? "Signed in" : "Member"
+  const displayRole = role && role !== "none" ? roleLabel(role) : user?.email ? "Signed in" : "Member"
 
   return (
     <div className="flex h-full flex-col">
@@ -47,7 +52,7 @@ const SideBar = ({ handleClose }) => {
       </p>
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
         <div className="space-y-0.5">
-          {menu.map((item) => {
+          {visibleMenu.map((item) => {
             const Icon = getMenuIconComponent(item.icon)
             const active = activeMenu === item.name
             return (

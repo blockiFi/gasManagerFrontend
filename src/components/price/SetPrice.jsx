@@ -1,5 +1,4 @@
-"use client"
-
+/* eslint-disable react/prop-types */
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,97 +12,136 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import axios from "@/lib/axios"
-import { Loader2, RefreshCcw, Tag } from "lucide-react"
+import { CheckCircle2, Loader2, RotateCcw, Tag } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useSelector } from "react-redux"
-import { useLocation, useNavigate } from "react-router-dom"
 
-const SetPrice = ({ location }) => {
-  const navigate = useNavigate()
-  const url = useLocation()
+const SetPrice = ({ location, onSuccess, triggerClassName }) => {
   const token = useSelector((state) => state.authentication.token)
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState(null)
+
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm()
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState()
-  const [error, setError] = useState()
 
-  const refresh = () => {
-    setSuccess(null)
-    setError(undefined)
+  const resetForm = () => {
+    setSuccess(false)
+    setError(null)
+    reset()
+  }
+
+  const handleOpenChange = (next) => {
+    setOpen(next)
+    if (!next) resetForm()
   }
 
   const onSubmit = async (data) => {
-    data.business_id = location.business_id
-    data.location_id = location.id
+    setError(null)
     setLoading(true)
-    setError(undefined)
+
+    const payload = {
+      price: data.price,
+      business_id: location.business_id,
+      location_id: location.id,
+    }
+
     try {
-      const response = await axios.post("api/business/location/set_price", data, {
+      const response = await axios.post("api/business/location/set_price", payload, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      setLoading(false)
+
       if (response.status === 200 || response.status === 201) {
-        setSuccess("Price updated successfully.")
-        navigate(url.pathname, { replace: true })
+        setSuccess(true)
+        onSuccess?.()
       } else {
-        setError("Could not set price. Try again.")
+        setError("Could not set price. Please try again.")
       }
     } catch {
+      setError("Could not set price. Please try again.")
+    } finally {
       setLoading(false)
-      setError("Could not set price. Try again.")
     }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-indigo-600 text-white shadow-sm hover:bg-indigo-700">
-          <Tag className="mr-2 h-4 w-4" />
+        <Button
+          type="button"
+          size="sm"
+          className={`gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 ${triggerClassName ?? ""}`}
+        >
+          <Tag className="h-4 w-4" aria-hidden />
           Set price
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set price · {location.name}</DialogTitle>
-          <DialogDescription>This becomes the active selling price for this location.</DialogDescription>
+          <DialogTitle>Set selling price</DialogTitle>
+          <DialogDescription>
+            Update the active price for <span className="font-medium text-slate-700">{location.name}</span>.
+          </DialogDescription>
         </DialogHeader>
-        {error ? (
-          <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
-            {error}
-          </p>
-        ) : null}
+
         {success ? (
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-emerald-50 px-4 py-4 text-emerald-900">
-            <p className="text-sm font-medium">{success}</p>
-            <Button type="button" variant="ghost" size="icon" onClick={refresh} aria-label="Set another">
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
+          <div className="space-y-4 py-2">
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+              <div>
+                <p className="font-medium text-emerald-900">Price updated</p>
+                <p className="mt-1 text-sm text-emerald-800">
+                  The new selling price is now active for this location.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Close
+              </Button>
+              <Button type="button" onClick={resetForm} className="gap-2">
+                <RotateCcw className="h-4 w-4" aria-hidden />
+                Set another
+              </Button>
+            </div>
           </div>
         ) : (
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            {error ? (
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+                {error}
+              </p>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor={`set-price-${location.id}`}>New price (₦)</Label>
               <Input
                 id={`set-price-${location.id}`}
                 type="number"
+                step="0.01"
+                min="0"
                 inputMode="decimal"
-                {...register("price", { required: true })}
-                aria-invalid={errors.price ? "true" : "false"}
+                placeholder={location.active_price ? String(location.active_price) : "0.00"}
+                {...register("price", { required: true, min: 0.01 })}
+                className="border-slate-200"
               />
-              {errors.price?.type === "required" && (
-                <p className="text-xs text-red-600" role="alert">
-                  Price is required
-                </p>
-              )}
+              {errors.price ? (
+                <p className="text-xs text-rose-600">A valid price is required.</p>
+              ) : null}
             </div>
-            <DialogFooter>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
                 Save price
               </Button>
             </DialogFooter>

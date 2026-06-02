@@ -2,14 +2,13 @@
 import { formatCurrency } from "@/lib/utils"
 import { ChevronRight, MapPin } from "lucide-react"
 
-const LocationCost = ({ location, isSelected, onSelect }) => {
-  const monthCost = Number(location.CurrentMonthsCost) || 0
-  const totalCost = Number(location.totalCost) || 0
+const LocationSupply = ({ site, isSelected, onSelect }) => {
+  const { location, supplyCount, pendingCount, openCount, totalSpend } = site
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(location)}
+      onClick={() => onSelect(site)}
       className={`group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
         isSelected
           ? "border-indigo-300 bg-indigo-50/80 shadow-sm ring-1 ring-indigo-200"
@@ -31,19 +30,27 @@ const LocationCost = ({ location, isSelected, onSelect }) => {
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="text-slate-500">
-            This month{" "}
-            <span className="font-semibold tabular-nums text-emerald-700">
-              ₦{formatCurrency(monthCost)}
-            </span>
+            {supplyCount} record{supplyCount === 1 ? "" : "s"}
           </span>
-          <span className="hidden text-slate-300 sm:inline">·</span>
-          <span className="text-slate-500">
-            All time{" "}
-            <span className="font-semibold tabular-nums text-slate-800">
-              ₦{formatCurrency(totalCost)}
-            </span>
-          </span>
+          {pendingCount > 0 ? (
+            <>
+              <span className="hidden text-slate-300 sm:inline">·</span>
+              <span className="font-medium text-amber-700">{pendingCount} pending</span>
+            </>
+          ) : null}
+          {openCount > 0 ? (
+            <>
+              <span className="hidden text-slate-300 sm:inline">·</span>
+              <span className="font-medium text-indigo-700">{openCount} open</span>
+            </>
+          ) : null}
         </div>
+        {supplyCount > 0 && totalSpend > 0 ? (
+          <p className="mt-1.5 text-xs text-slate-500">
+            Spend{" "}
+            <span className="font-semibold tabular-nums text-slate-800">₦{formatCurrency(totalSpend)}</span>
+          </p>
+        ) : null}
       </div>
 
       <ChevronRight
@@ -56,4 +63,4 @@ const LocationCost = ({ location, isSelected, onSelect }) => {
   )
 }
 
-export default LocationCost
+export default LocationSupply

@@ -1,4 +1,6 @@
 import { formatCurrency } from "@/lib/utils"
+import { CAPABILITIES } from "@/lib/permissions"
+import usePermissions from "@/hooks/usePermissions"
 import { Lock } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -11,6 +13,8 @@ const Row = ({ label, value, mono }) => (
 
 const LocationOverviewCard = ({ location }) => {
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  const showMetrics = can(CAPABILITIES.VIEW_ANALYTICS)
   const locked = location.locked === true
   const dispensers = location.dispensers
   const hasActive =
@@ -66,54 +70,58 @@ const LocationOverviewCard = ({ location }) => {
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5 pt-4">
-        <div className="space-y-2.5">
-          <Row label="Total sales" value={`₦${formatCurrency(ts.totalSales)}`} mono />
-          <Row label="Total kg" value={formatCurrency(ts.totalKg)} mono />
-          <Row label="Total profit" value={`₦${formatCurrency(ts.profit)}`} mono />
-        </div>
-
-        <div className="h-px bg-slate-100" />
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-xs text-slate-500">Excess kg</p>
-            <p className="mt-0.5 font-medium tabular-nums text-slate-900">
-              {formatCurrency(location.totalExcessKg)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-500">Profit from excess</p>
-            <p className="mt-0.5 font-medium tabular-nums text-slate-900">
-              ₦{formatCurrency(location.totalExcessProfit)}
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Current month
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Sales</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
-                ₦{formatCurrency(cm.totalSales)}
-              </p>
+        {showMetrics ? (
+          <>
+            <div className="space-y-2.5">
+              <Row label="Total sales" value={`₦${formatCurrency(ts.totalSales)}`} mono />
+              <Row label="Total kg" value={formatCurrency(ts.totalKg)} mono />
+              <Row label="Total profit" value={`₦${formatCurrency(ts.profit)}`} mono />
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Kg</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
-                {formatCurrency(cm.totalKg)}
-              </p>
+
+            <div className="h-px bg-slate-100" />
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-slate-500">Excess kg</p>
+                <p className="mt-0.5 font-medium tabular-nums text-slate-900">
+                  {formatCurrency(location.totalExcessKg)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Profit from excess</p>
+                <p className="mt-0.5 font-medium tabular-nums text-slate-900">
+                  ₦{formatCurrency(location.totalExcessProfit)}
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Profit</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
-                ₦{formatCurrency(cm.profit)}
+
+            <div>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Current month
               </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Sales</p>
+                  <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
+                    ₦{formatCurrency(cm.totalSales)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Kg</p>
+                  <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
+                    {formatCurrency(cm.totalKg)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Profit</p>
+                  <p className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
+                    ₦{formatCurrency(cm.profit)}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        ) : null}
 
         {locked ? (
           <Link

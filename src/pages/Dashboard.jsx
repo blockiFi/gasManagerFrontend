@@ -1,16 +1,24 @@
-import { Suspense, useState } from "react"
-import { Outlet } from "react-router-dom"
+import { Suspense, useEffect, useState } from "react"
+import { Link, Outlet, useSearchParams } from "react-router-dom"
 import { useSelector } from "react-redux"
+import { toast } from "react-toastify"
 import RouteFallback from "@/components/layout/RouteFallback"
 import SideBar from "@/components/navigation/SideBar"
 import NavBar from "@/components/navigation/NavBar"
 import MiniSideBar from "@/components/navigation/MiniSideBar"
-import { Link } from "react-router-dom"
 
 const Dashboard = () => {
   const [sideBarOpen, setSideBarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const subscription = useSelector((state) => state.authentication.subscription)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get("denied") === "1") {
+      toast.warn("You don't have permission to access that page.")
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   return (
     <div className="flex min-h-screen min-w-0 bg-slate-50">

@@ -25,27 +25,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import SupplyDetailsModal from "@/components/supply/SupplyDetailsModal"
+import {
+  isDelivered,
+  isOpenSupply,
+  isUnlimitedSupply,
+} from "@/components/table/SupplyTable"
 import { formatCurrency } from "@/lib/utils"
 import { format } from "date-fns"
-import { CalendarDays, ListFilter, Receipt, Search } from "lucide-react"
+import { ListFilter, MapPin, Package, Search } from "lucide-react"
 
 const COLUMN_LABELS = {
-  select: "#",
-  title: "Title",
+  rowNum: "#",
+  locationName: "Location",
+  dispenserName: "Dispenser",
+  quantity: "Qty (kg)",
   amount: "Amount",
-  description: "Description",
-  paid_at: "Date",
+  supplied: "Status",
+  purchased_at: "Purchased",
+  delivered_at: "Delivered",
 }
 
-const moneyPill = (n) => (
-  <span className="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-900 ring-1 ring-slate-200/80">
-    ₦{formatCurrency(n)}
-  </span>
-)
-
-export const columns = [
+const columns = [
   {
-    id: "select",
+    id: "rowNum",
     header: "#",
     cell: ({ row }) => (
       <span className="text-xs font-medium tabular-nums text-slate-400">{row.index + 1}</span>
@@ -54,48 +57,116 @@ export const columns = [
     enableHiding: false,
   },
   {
-    accessorKey: "title",
-    header: "Title",
+    id: "locationName",
+    accessorFn: (row) => row.location?.name ?? "",
+    header: "Location",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2.5">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
-          <Receipt className="h-3.5 w-3.5" aria-hidden />
+      <div className="flex items-center gap-2">
+        <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+        <span className="max-w-[140px] truncate font-medium text-slate-900">
+          {row.original.location?.name ?? "—"}
         </span>
-        <span className="font-medium text-slate-900">{row.getValue("title")}</span>
       </div>
     ),
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }) => moneyPill(row.getValue("amount")),
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
+    id: "dispenserName",
+    accessorFn: (row) => row.dispenser?.name ?? "",
+    header: "Dispenser",
     cell: ({ row }) => (
-      <span className="line-clamp-2 max-w-xs text-sm text-slate-600">{row.getValue("description")}</span>
+      <span className="max-w-[120px] truncate text-sm text-slate-700">
+        {row.original.dispenser?.name ?? "—"}
+      </span>
     ),
   },
   {
-    accessorKey: "paid_at",
-    header: "Date",
+    accessorKey: "quantity",
+    header: "Qty (kg)",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("paid_at"))
-      const formattedDate = format(date, "do MMM, yyyy")
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) {
+        return <span className="text-sm italic text-slate-500">Running</span>
+      }
       return (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-slate-700">
-          <CalendarDays className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-          {formattedDate}
+        <span className="tabular-nums text-sm text-slate-800">{formatCurrency(row.getValue("quantity"))}</span>
+      )
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Amount",
+    cell: ({ row }) => {
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) {
+        return <span className="text-sm italic text-slate-500">—</span>
+      }
+      return (
+        <span className="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-900 ring-1 ring-slate-200/80">
+          ₦{formatCurrency(row.getValue("amount"))}
         </span>
       )
+    },
+  },
+  {
+    accessorKey: "supplied",
+    header: "Status",
+    cell: ({ row }) => {
+      const s = row.original
+      const ok = isDelivered(s)
+      const sold = !isOpenSupply(s)
+      const unlimited = isUnlimitedSupply(s)
+      return (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {unlimited ? (
+            <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-800 ring-1 ring-indigo-100">
+              Unlimited
+            </span>
+          ) : null}
+          {!ok ? (
+            <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-100">
+              Pending
+            </span>
+          ) : sold ? (
+            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+              Closed
+            </span>
+          ) : (
+            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-100">
+              Open
+            </span>
+          )}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "purchased_at",
+    header: "Purchased",
+    cell: ({ row }) => {
+      const raw = row.getValue("purchased_at")
+      const date = new Date(raw)
+      if (Number.isNaN(date.getTime())) return <span className="text-slate-400">—</span>
+      return <span className="text-sm text-slate-600">{format(date, "d MMM yyyy")}</span>
+    },
+  },
+  {
+    accessorKey: "delivered_at",
+    header: "Delivered",
+    cell: ({ row }) => {
+      if (!isDelivered(row.original)) return <span className="text-slate-400">—</span>
+      const raw = row.getValue("delivered_at")
+      const date = new Date(raw)
+      if (Number.isNaN(date.getTime())) return <span className="text-slate-400">—</span>
+      return <span className="text-sm text-slate-600">{format(date, "d MMM yyyy")}</span>
     },
   },
 ]
 
 // eslint-disable-next-line react/prop-types
-const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
+const SupplierSupplyTable = ({ data = [], businessId, emptyHint }) => {
   const [reversedArray, setReversedArray] = useState([])
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [selectedSupply, setSelectedSupply] = useState(null)
 
   useEffect(() => {
     setReversedArray([...data].reverse())
@@ -104,7 +175,7 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState({})
-  const [rowSelection, setRowSelection] = useState({})
+  const [globalFilter, setGlobalFilter] = useState("")
 
   const table = useReactTable({
     data: reversedArray,
@@ -116,44 +187,44 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      if (filterValue == null || String(filterValue).trim() === "") return true
+      const original = row.original
+      const q = String(filterValue).toLowerCase()
+      const loc = (original.location?.name ?? "").toLowerCase()
+      const disp = (original.dispenser?.name ?? "").toLowerCase()
+      return loc.includes(q) || disp.includes(q)
     },
+    onGlobalFilterChange: setGlobalFilter,
+    state: { sorting, columnFilters, columnVisibility, globalFilter },
   })
+
+  const filteredTotal = useMemo(() => {
+    const rows = table.getFilteredRowModel().rows
+    let kg = 0
+    let spend = 0
+    for (const row of rows) {
+      const s = row.original
+      if (isUnlimitedSupply(s) && isOpenSupply(s)) continue
+      kg += Number(s.quantity) || 0
+      spend += Number(s.amount) || 0
+    }
+    return { kg, spend }
+  }, [table, reversedArray, globalFilter])
 
   const totalRows = table.getFilteredRowModel().rows.length
   const pageIndex = table.getState().pagination.pageIndex
   const pageCount = Math.max(1, table.getPageCount())
-  const titleColumn = table.getColumn("title")
-
-  const titleFilter = columnFilters.find((f) => f.id === "title")?.value ?? ""
-
-  const filteredTotal = useMemo(() => {
-    const rows = titleFilter
-      ? reversedArray.filter((row) =>
-          String(row.title ?? "")
-            .toLowerCase()
-            .includes(String(titleFilter).toLowerCase())
-        )
-      : reversedArray
-    return rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
-  }, [reversedArray, titleFilter])
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-16 text-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
-        <p className="mt-4 text-sm text-slate-500">Loading cost entries…</p>
-      </div>
-    )
-  }
 
   return (
     <div className="w-full space-y-4">
+      <SupplyDetailsModal
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        supply={selectedSupply}
+        businessId={businessId}
+      />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search
@@ -161,9 +232,9 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
             aria-hidden
           />
           <Input
-            placeholder="Search by title…"
-            value={titleColumn?.getFilterValue() ?? ""}
-            onChange={(e) => titleColumn?.setFilterValue(e.target.value)}
+            placeholder="Search location or dispenser…"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
             className="h-10 border-slate-200 bg-white pl-9 text-sm shadow-sm placeholder:text-slate-400"
           />
         </div>
@@ -216,10 +287,13 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
                 table.getRowModel().rows.map((row, i) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className={`border-slate-100 transition-colors hover:bg-slate-50/80 ${
+                    className={`cursor-pointer border-slate-100 transition-colors hover:bg-slate-50/80 ${
                       i % 2 === 1 ? "bg-slate-50/40" : "bg-white"
                     }`}
+                    onClick={() => {
+                      setSelectedSupply(row.original)
+                      setDetailsOpen(true)
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="px-4 py-3 align-middle text-sm">
@@ -233,11 +307,11 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
                   <TableCell colSpan={columns.length} className="h-36 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 px-4 py-6">
                       <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-slate-400">
-                        <Receipt className="h-5 w-5" aria-hidden />
+                        <Package className="h-5 w-5" aria-hidden />
                       </div>
-                      <p className="text-sm font-medium text-slate-700">No cost entries</p>
+                      <p className="text-sm font-medium text-slate-700">No supply records</p>
                       <p className="max-w-sm text-sm text-slate-500">
-                        {emptyHint ?? "Add a cost entry to start tracking expenses for this location."}
+                        {emptyHint ?? "This supplier has no linked supply orders yet."}
                       </p>
                     </div>
                   </TableCell>
@@ -248,13 +322,19 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
         </div>
 
         {totalRows > 0 ? (
-          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/80 px-4 py-3">
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Filtered total
-            </span>
-            <span className="text-base font-semibold tabular-nums text-slate-900">
-              ₦{formatCurrency(filteredTotal)}
-            </span>
+          <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 px-4 py-3 sm:grid-cols-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Filtered kg</span>
+              <span className="font-semibold tabular-nums text-slate-900">
+                {formatCurrency(filteredTotal.kg)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Filtered spend</span>
+              <span className="font-semibold tabular-nums text-slate-900">
+                ₦{formatCurrency(filteredTotal.spend)}
+              </span>
+            </div>
           </div>
         ) : null}
       </div>
@@ -291,4 +371,4 @@ const CostTable = ({ data = [], isLoading = false, emptyHint }) => {
   )
 }
 
-export default CostTable
+export default SupplierSupplyTable

@@ -8,6 +8,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const MENU_ICON_MAP = {
   Users,
   Settings,
   CreditCard,
+  ShieldCheck,
 };
 
 export function getMenuIconComponent(iconKey) {

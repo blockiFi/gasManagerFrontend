@@ -1,5 +1,7 @@
 import DispenserActiveButtons, { isDispenserActive } from "@/components/dispenser/DispenserActiveButtons"
 import ViewDispenser from "@/components/dispenser/ViewDispenser"
+import Can from "@/components/Auth/Can"
+import { CAPABILITIES } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -134,8 +136,10 @@ const createColumns = (locationById, businessId) => [
     header: "Actions",
     cell: ({ row }) => (
       <div className="flex flex-wrap items-center gap-2">
-        <DispenserActiveButtons dispenser={row.original} businessId={businessId} />
-        <ViewDispenser dispenser={row.original} triggerVariant="outline" />
+        <Can capability={CAPABILITIES.DISPENSER_MANAGE}>
+          <DispenserActiveButtons dispenser={row.original} businessId={businessId} />
+          <ViewDispenser dispenser={row.original} triggerVariant="outline" />
+        </Can>
       </div>
     ),
     enableSorting: false,
@@ -212,7 +216,7 @@ const DispenserTable = ({ data = [], locations: locationsResult = {}, businessId
               placeholder="Search by name or location…"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-9"
+              className="h-10 border-slate-200 bg-white pl-9 text-sm shadow-sm placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -226,10 +230,10 @@ const DispenserTable = ({ data = [], locations: locationsResult = {}, businessId
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto h-9">
-                  <ListFilter className="mr-2 h-4 w-4" aria-hidden />
+                <Button variant="outline" size="sm" className="border-slate-200 shadow-sm">
+                  <ListFilter className="mr-1.5 h-4 w-4 text-slate-500" aria-hidden />
                   Columns
-                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                  <ChevronDownIcon className="ml-1.5 h-4 w-4 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -252,65 +256,75 @@ const DispenserTable = ({ data = [], locations: locationsResult = {}, businessId
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="bg-slate-50/80 hover:bg-slate-50/80">
-                {hg.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap text-slate-600">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="border-slate-100">
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-middle">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="max-h-[min(56vh,520px)] overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm [&_tr]:border-slate-200">
+              {table.getHeaderGroups().map((hg) => (
+                <TableRow key={hg.id} className="border-slate-200 hover:bg-transparent">
+                  {hg.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-slate-500">
-                  No dispensers match your filters.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row, i) => (
+                  <TableRow
+                    key={row.id}
+                    className={`border-slate-100 transition-colors hover:bg-slate-50/80 ${
+                      i % 2 === 1 ? "bg-slate-50/40" : "bg-white"
+                    }`}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4 py-3 align-middle text-sm">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-36 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 px-4 py-6">
+                      <p className="text-sm font-medium text-slate-700">No dispensers match your filters</p>
+                      <p className="text-sm text-slate-500">Try a different search term.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-500">
-          {totalRows === 0
-            ? "No rows"
-            : `Showing ${pageIndex * table.getState().pagination.pageSize + 1}–${Math.min(
-                (pageIndex + 1) * table.getState().pagination.pageSize,
-                totalRows
-              )} of ${totalRows}`}
+          <span className="font-medium text-slate-700">{totalRows}</span> entr{totalRows === 1 ? "y" : "ies"}
+          <span className="mx-2 text-slate-300">·</span>
+          Page <span className="font-medium text-slate-700">{pageIndex + 1}</span> of{" "}
+          <span className="font-medium text-slate-700">{pageCount}</span>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
+            className="border-slate-200"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             Previous
           </Button>
-          <span className="text-sm text-slate-600">
-            Page {pageIndex + 1} of {pageCount}
-          </span>
           <Button
             variant="outline"
             size="sm"
+            className="border-slate-200"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >

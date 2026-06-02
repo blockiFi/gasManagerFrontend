@@ -8,6 +8,9 @@ import axios from '@/lib/axios';
 import { Checkbox } from '../ui/checkbox';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import usePermissions from '@/hooks/usePermissions';
+import { CAPABILITIES } from '@/lib/permissions';
+
 const UpdateSetting = ({setting}) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState();
@@ -17,6 +20,8 @@ const UpdateSetting = ({setting}) => {
   const navigate = useNavigate();
   const url = useLocation();
   const token = useSelector((state) => state.authentication.token);
+  const { can } = usePermissions();
+  const canUpdate = can(CAPABILITIES.SETTINGS_UPDATE);
 
   
     const updateSettings = () => {
@@ -73,7 +78,11 @@ const UpdateSetting = ({setting}) => {
 
       const DisplayInput = () => {
         if(setting.type == 'number'){
-            return <Input type="number" value={value} onChange={handleInputChange} /> 
+            return canUpdate ? (
+              <Input type="number" value={value} onChange={handleInputChange} />
+            ) : (
+              <span className="tabular-nums text-slate-800">{value}</span>
+            )
         }else if(setting.type == 'boolean'){
            
             if(setting.value.value === 'true') {
@@ -88,9 +97,10 @@ const UpdateSetting = ({setting}) => {
         {
             DisplayInput()
         }
-        
-        
-        <Button onClick={updateSettings}>{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}update </Button></div>
+        {canUpdate ? (
+          <Button onClick={updateSettings}>{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}update </Button>
+        ) : null}
+    </div>
   )
 }
 

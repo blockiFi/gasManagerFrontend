@@ -27,12 +27,15 @@ const AuthenicationSlice = createSlice({
     },
     setSubscription: (state, action) => {
         state.subscription = action.payload;
+    },
+    setPermissions: (state, action) => {
+        state.permissions = action.payload;
     }
   },
 });
 
 // Export actions
-export const { setUser, setToken , setUserBusiness, setSubscription } = AuthenicationSlice.actions;
+export const { setUser, setToken , setUserBusiness, setSubscription, setPermissions } = AuthenicationSlice.actions;
 
 // Export the reducer to use in the store
 export default AuthenicationSlice.reducer;

@@ -15,7 +15,6 @@ import { Loader2, Package, Plus, RefreshCcw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useSelector } from "react-redux"
-import { useLocation, useNavigate } from "react-router-dom"
 
 const todayYmd = () => {
   const d = new Date()
@@ -27,10 +26,8 @@ const todayYmd = () => {
 const selectClass =
   "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 
-const AddSupply = ({ business_id, locations, suppliers }) => {
+const AddSupply = ({ business_id, locations, suppliers, defaultLocationId = null, onSuccess, triggerClassName }) => {
   const token = useSelector((state) => state.authentication.token)
-  const navigate = useNavigate()
-  const location = useLocation()
   const {
     register,
     handleSubmit,
@@ -53,15 +50,17 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
   const supList = suppliers?.data ?? []
 
   useEffect(() => {
-    if (locList.length > 0) {
-      const first = locList[0]
-      setValue("location_id", String(first.id))
-      setDispensers(first.dispensers ?? [])
-      if (first.dispensers?.[0]) {
-        setValue("dispenser_id", String(first.dispensers[0].id))
-      }
+    if (locList.length === 0) return
+    const targetId = defaultLocationId ? String(defaultLocationId) : String(locList[0].id)
+    const loc = locList.find((l) => String(l.id) === targetId) ?? locList[0]
+    setValue("location_id", String(loc.id))
+    setDispensers(loc.dispensers ?? [])
+    if (loc.dispensers?.[0]) {
+      setValue("dispenser_id", String(loc.dispensers[0].id))
+    } else {
+      setValue("dispenser_id", "")
     }
-  }, [locList, setValue])
+  }, [locList, setValue, defaultLocationId])
 
   const onLocationChange = (e) => {
     const id = e.target.value
@@ -99,7 +98,7 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
       setLoading(false)
       if (response.status === 200 || response.status === 201) {
         setSuccess("Supply added successfully.")
-        navigate(location.pathname, { replace: true })
+        onSuccess?.()
       } else {
         setError("Could not add supply. Check your data and try again.")
       }
@@ -112,7 +111,7 @@ const AddSupply = ({ business_id, locations, suppliers }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-indigo-600 text-white shadow-sm hover:bg-indigo-700">
+        <Button className={`gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 ${triggerClassName ?? ""}`}>
           <Plus className="mr-2 h-4 w-4" />
           Add supply
         </Button>
